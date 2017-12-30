@@ -1,4 +1,4 @@
-package org.sltpaya.demo;
+package com.bug95.demo;
 
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -8,7 +8,8 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 
-import org.sltpaya.tablayout.TabLayoutBuilder;
+import com.bug95.tablayout.TabLayoutBuilder;
+import com.bug95.tablayout.XPagerAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,24 +47,30 @@ public class MainActivity extends AppCompatActivity {
         };
         //init viewpager
         ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
-        viewPager.setAdapter(new MyAdapter(getSupportFragmentManager(),title));
+        viewPager.setAdapter(new MyAdapter(getSupportFragmentManager(), title));
         //init TabLayout
-        tabLayout.setupWithViewPager(viewPager);//setting up this TabLayout with ViewPager
+        tabLayout.setupWithXViewPager(viewPager);//setting up this TabLayout with ViewPager
         tabLayout.setBottomMargin(2);//set the bottomMargin --unit:dp
         tabLayout.setTextSize(12);//set title size --unit:sp
         //add tab to TabLayout
-        for (int i = 0; i < tabCount; i++) {
+        for (int i = 0; i < tabCount / 2; i++) {
             tabLayout.addTab(new TabLayoutBuilder.ItemStatus(title[i], resId[i], textColor[0], textColor[1]));
         }
+        tabLayout.setCenterTabItemStatus(new TabLayoutBuilder.ItemStatus("中心按钮", R.drawable.center_tab_selector, textColor[0], textColor[1]));
+        for (int i = tabCount / 2; i < tabCount; i++) {
+            tabLayout.addTab(new TabLayoutBuilder.ItemStatus(title[i], resId[i], textColor[0], textColor[1]));
+        }
+
         //show tabView to your screen
         tabLayout.build();
     }
 
 
-    private class MyAdapter extends FragmentPagerAdapter {
+    private class MyAdapter extends XPagerAdapter {
 
         private String[] titles;
-        MyAdapter(FragmentManager fm,String[] titles) {
+
+        MyAdapter(FragmentManager fm, String[] titles) {
             super(fm);
             this.titles = titles;
         }
@@ -71,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public Fragment getItem(int position) {
             Bundle args = new Bundle();
-            args.putString("title",titles[position]);
+            args.putString("title", titles[position]);
             BlankFragment fragment = new BlankFragment();
             fragment.setArguments(args);
             return fragment;

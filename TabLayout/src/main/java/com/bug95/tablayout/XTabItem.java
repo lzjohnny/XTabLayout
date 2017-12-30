@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.sltpaya.tablayout;
+package com.bug95.tablayout;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -23,6 +23,8 @@ import android.util.AttributeSet;
 import android.view.View;
 
 /**
+ * Item的Text、Icon、布局属性的封装，并不是真正添加到TabLayout内的对象
+ * 真正添加到TabLayout的是TabLayout.Tab对象，注意阅读下面的原始注释
  * TabItem is a special 'view' which allows you to declare tab items for a {@link XTabLayout}
  * within a layout. This view is not actually added to TabLayout, it is just a dummy which allows
  * setting of a tab items's text, icon and custom layout. See TabLayout for more information on how
