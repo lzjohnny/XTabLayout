@@ -2254,7 +2254,7 @@ public class XTabLayout extends HorizontalScrollView {
         private ViewPager mViewPager;
         private int mPreviousScrollState;
         private int mScrollState;
-        private int mHalfPagerPosition = -1;
+        private float mHalfPagerPosition = -1;
 
         public TabLayoutOnPageChangeListener(XTabLayout tabLayout) {
             mTabLayoutRef = new WeakReference<>(tabLayout);
@@ -2263,7 +2263,7 @@ public class XTabLayout extends HorizontalScrollView {
         public TabLayoutOnPageChangeListener(XTabLayout tabLayout, ViewPager viewPager, int pagerCount) {
             mTabLayoutRef = new WeakReference<>(tabLayout);
             mViewPager = viewPager;
-            mHalfPagerPosition = pagerCount / 2;
+            mHalfPagerPosition = (pagerCount - 1) / 2.0f;
         }
 
         @Override
@@ -2272,11 +2272,14 @@ public class XTabLayout extends HorizontalScrollView {
             mScrollState = state;
         }
 
+        // 滑动时不断回调，产生滑动不一定切换页面，但是需要刷新指示器
         @Override
         public void onPageScrolled(int position, final float positionOffset,
                                    final int positionOffsetPixels) {
-            // 为-1时认为未初始化，即无中央按钮的情况
-            if (mHalfPagerPosition != -1 && position > mHalfPagerPosition) {
+            // 为-1时认为未初始化，即无中央按钮的情况，不需处理
+            // position为基准位置，positionOffset为滑动中偏移的位置，两者和即为实际位置
+            // 一旦实际位置越过中间分割线，就需要为position+1，以跳过中心按钮
+            if (mHalfPagerPosition != -1 && (position + positionOffset) >= mHalfPagerPosition) {
                 position++;
             }
 
@@ -2295,6 +2298,7 @@ public class XTabLayout extends HorizontalScrollView {
             }
         }
 
+        // 页面切换时回调，用来更新选中Tab位置
         @Override
         public void onPageSelected(int position) {
             if (position >= mHalfPagerPosition) {
@@ -2346,9 +2350,10 @@ public class XTabLayout extends HorizontalScrollView {
             }
 
             if (position == mHalfTabPosition) {
-                return;
                 // 需要加入中央按钮点击处理逻辑
+                return;
             }
+
             if (position > mHalfTabPosition) {
                 position--;
             }
