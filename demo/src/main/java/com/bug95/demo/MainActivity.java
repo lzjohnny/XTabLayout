@@ -13,9 +13,6 @@ import com.bug95.tablayout.XPagerAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
-    //Tab count
-    private int tabCount;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,41 +24,32 @@ public class MainActivity extends AppCompatActivity {
         Resources resources = getResources();
         //inflate TabLayoutBuilder
         TabLayoutBuilder tabLayout = (TabLayoutBuilder) findViewById(R.id.tab_layout);
-        //Tab count
-        tabCount = 4;
-        //The textColor
         final int[] textColor = {0xff333333, 0xffffffff};
-        //The Image res id
         int[] resId = {
                 R.drawable.heart_selector,
                 R.drawable.ufo_selector,
                 R.drawable.diamond_selector,
                 R.drawable.mine_selector
         };
-        //The title
-        String[] title = {
+        String[] tabTitle = {
                 resources.getString(R.string.log),
                 resources.getString(R.string.file),
                 resources.getString(R.string.tool),
                 resources.getString(R.string.setting),
         };
-        //init viewpager
+
         ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
-        viewPager.setAdapter(new MyAdapter(getSupportFragmentManager(), title));
-        //init TabLayout
-        tabLayout.setupWithXViewPager(viewPager);//setting up this TabLayout with ViewPager
+        viewPager.setAdapter(new MyAdapter(getSupportFragmentManager(), tabTitle));
+
+        tabLayout.setupWithXViewPager(viewPager); //在这里会完成Tab的实例化，接下来只需要设置Tab的布局View
+        tabLayout.setTabIcon(resId);
+        tabLayout.setTabTitle(tabTitle);
+        tabLayout.setCenterIcon(R.drawable.center_tab_selector);
+        tabLayout.setCenterTitle("中心按钮");
+        tabLayout.setTextColor(textColor);
         tabLayout.setBottomMargin(2);//set the bottomMargin --unit:dp
         tabLayout.setTextSize(12);//set title size --unit:sp
-        //add tab to TabLayout
-        for (int i = 0; i < tabCount / 2; i++) {
-            tabLayout.addTab(new TabLayoutBuilder.ItemStatus(title[i], resId[i], textColor[0], textColor[1]));
-        }
-        tabLayout.setCenterTabItemStatus(new TabLayoutBuilder.ItemStatus("中心按钮", R.drawable.center_tab_selector, textColor[0], textColor[1]));
-        for (int i = tabCount / 2; i < tabCount; i++) {
-            tabLayout.addTab(new TabLayoutBuilder.ItemStatus(title[i], resId[i], textColor[0], textColor[1]));
-        }
 
-        //show tabView to your screen
         tabLayout.build();
     }
 
@@ -70,6 +58,10 @@ public class MainActivity extends AppCompatActivity {
 
         private String[] titles;
 
+        MyAdapter(FragmentManager fm) {
+            super(fm);
+        }
+
         MyAdapter(FragmentManager fm, String[] titles) {
             super(fm);
             this.titles = titles;
@@ -77,16 +69,18 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public Fragment getItem(int position) {
-            Bundle args = new Bundle();
-            args.putString("title", titles[position]);
             BlankFragment fragment = new BlankFragment();
-            fragment.setArguments(args);
+            if (titles != null && position < titles.length) {
+                Bundle args = new Bundle();
+                args.putString("title", titles[position]);
+                fragment.setArguments(args);
+            }
             return fragment;
         }
 
         @Override
         public int getCount() {
-            return tabCount;
+            return 4;
         }
     }
 }

@@ -259,9 +259,9 @@ public class XTabLayout extends HorizontalScrollView {
     private final SlidingTabStrip mTabStrip;
 
     boolean mHasCenterTab;
-    int mCenterTabWidth;
-    int mCenterTabHeight;
-    int mCenterTabMarginBottom;
+    private int mCenterTabWidth;
+    private int mCenterTabHeight;
+    private int mCenterTabMarginBottom;
 
     int mTabPaddingStart;
     int mTabPaddingTop;
@@ -916,7 +916,7 @@ public class XTabLayout extends HorizontalScrollView {
     private void addBaseListener(ViewPager viewPager, boolean autoRefresh) {
         // Add our custom OnPageChangeListener to the ViewPager
         if (mPageChangeListener == null) {
-            mPageChangeListener = new TabLayoutOnPageChangeListener(this, mViewPager, mPagerAdapter.getCount());
+            mPageChangeListener = new TabLayoutOnPageChangeListener(this, mViewPager, mPagerAdapter.getCount(), mHasCenterTab);
         }
         mPageChangeListener.reset();
         viewPager.addOnPageChangeListener(mPageChangeListener);
@@ -924,7 +924,7 @@ public class XTabLayout extends HorizontalScrollView {
         // Now we'll add a tab selected listener to set ViewPager's current item
         // 中央按钮被点击也会被ViewPagerOnTabSelectedListener监听到，但是需要做特殊处理
         // 所以需要传入中央按钮点击监听器
-        mCurrentVpSelectedListener = new ViewPagerOnTabSelectedListener(viewPager, mTabStrip.getChildCount());
+        mCurrentVpSelectedListener = new ViewPagerOnTabSelectedListener(viewPager, mTabStrip.getChildCount(), mHasCenterTab);
 
         addOnTabSelectedListener(mCurrentVpSelectedListener);
 
@@ -1037,7 +1037,7 @@ public class XTabLayout extends HorizontalScrollView {
     }
 
     private void addTabsWithCenterTab() {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.design_layout_tab_icon, this, false);
+//        View view = LayoutInflater.from(getContext()).inflate(R.layout.design_layout_tab_icon, this, false);
 
         final int pagerCount = mPagerAdapter.getCount();
         for (int i = 0; i < pagerCount / 2; i++) {
@@ -2255,15 +2255,17 @@ public class XTabLayout extends HorizontalScrollView {
         private int mPreviousScrollState;
         private int mScrollState;
         private float mHalfPagerPosition = -1;
+        private boolean mHasCenterTab;
 
         public TabLayoutOnPageChangeListener(XTabLayout tabLayout) {
             mTabLayoutRef = new WeakReference<>(tabLayout);
         }
 
-        public TabLayoutOnPageChangeListener(XTabLayout tabLayout, ViewPager viewPager, int pagerCount) {
+        public TabLayoutOnPageChangeListener(XTabLayout tabLayout, ViewPager viewPager, int pagerCount, boolean hasCenterTab) {
             mTabLayoutRef = new WeakReference<>(tabLayout);
             mViewPager = viewPager;
             mHalfPagerPosition = (pagerCount - 1) / 2.0f;
+            mHasCenterTab = hasCenterTab;
         }
 
         @Override
@@ -2279,7 +2281,7 @@ public class XTabLayout extends HorizontalScrollView {
             // 为-1时认为未初始化，即无中央按钮的情况，不需处理
             // position为基准位置，positionOffset为滑动中偏移的位置，两者和即为实际位置
             // 一旦实际位置越过中间分割线，就需要为position+1，以跳过中心按钮
-            if (mHalfPagerPosition != -1 && (position + positionOffset) >= mHalfPagerPosition) {
+            if (mHasCenterTab && mHalfPagerPosition != -1 && (position + positionOffset) >= mHalfPagerPosition) {
                 position++;
             }
 
@@ -2301,7 +2303,7 @@ public class XTabLayout extends HorizontalScrollView {
         // 页面切换时回调，用来更新选中Tab位置
         @Override
         public void onPageSelected(int position) {
-            if (position >= mHalfPagerPosition) {
+            if (mHasCenterTab && position >= mHalfPagerPosition) {
                 position++;
             }
 
@@ -2329,14 +2331,16 @@ public class XTabLayout extends HorizontalScrollView {
     public static class ViewPagerOnTabSelectedListener implements XTabLayout.OnTabSelectedListener {
         private final ViewPager mViewPager;
         private int mHalfTabPosition = -1;
+        private boolean mHasCenterTab;
 
         public ViewPagerOnTabSelectedListener(ViewPager viewPager) {
             mViewPager = viewPager;
         }
 
-        public ViewPagerOnTabSelectedListener(ViewPager viewPager, int tabCount) {
+        public ViewPagerOnTabSelectedListener(ViewPager viewPager, int tabCount, boolean hasCenterTab) {
             mViewPager = viewPager;
             mHalfTabPosition = tabCount / 2;
+            mHasCenterTab = hasCenterTab;
         }
 
         @Override
@@ -2344,7 +2348,7 @@ public class XTabLayout extends HorizontalScrollView {
             int position = tab.getPosition();
 
             // 无中央按钮，不需要位置转换
-            if (mHalfTabPosition == -1) {
+            if (!mHasCenterTab || mHalfTabPosition == -1) {
                 mViewPager.setCurrentItem(position);
                 return;
             }
