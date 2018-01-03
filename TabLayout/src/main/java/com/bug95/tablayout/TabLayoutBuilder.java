@@ -1,6 +1,7 @@
 package com.bug95.tablayout;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.support.annotation.IdRes;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -29,7 +30,7 @@ public class TabLayoutBuilder extends XTabLayout {
     private String[] mTabTitle;
     private int mCenterResId;
     private String mCenterTitle;
-    private int[] mTextColor;
+    private int mTextColorId;
 
     private int mTabCount;
 
@@ -69,8 +70,8 @@ public class TabLayoutBuilder extends XTabLayout {
         mCenterTitle = title;
     }
 
-    public void setTextColor(int[] textColor) {
-        mTextColor = textColor;
+    public void setTextColorId(int textColorId) {
+        mTextColorId = textColorId;
     }
 
     /**
@@ -85,11 +86,11 @@ public class TabLayoutBuilder extends XTabLayout {
         TabLayoutBuilder.ItemStatus itemStatus;
         for (int i = 0; i < mTabCount; i++) {
             if (mHasCenterTab && i == mTabCount / 2) {
-                itemStatus = new TabLayoutBuilder.ItemStatus(mCenterTitle, mCenterResId, mTextColor[0], mTextColor[1]);
+                itemStatus = new TabLayoutBuilder.ItemStatus(mCenterTitle, mCenterResId, mTextColorId);
             } else if (mHasCenterTab && i > mTabCount / 2) {
-                itemStatus = new TabLayoutBuilder.ItemStatus(mTabTitle[i - 1], mTabResId[i - 1], mTextColor[0], mTextColor[1]);
+                itemStatus = new TabLayoutBuilder.ItemStatus(mTabTitle[i - 1], mTabResId[i - 1], mTextColorId);
             } else {
-                itemStatus = new TabLayoutBuilder.ItemStatus(mTabTitle[i], mTabResId[i], mTextColor[0], mTextColor[1]);
+                itemStatus = new TabLayoutBuilder.ItemStatus(mTabTitle[i], mTabResId[i], mTextColorId);
             }
 
             mItemViewsList.add(getTabView(itemStatus));
@@ -155,6 +156,7 @@ public class TabLayoutBuilder extends XTabLayout {
         private int selectedResId;
         private int normalTitleColor;
         private int selectedTitleColor;
+        private int titleColorSelector;
 
         public ItemStatus(CharSequence title, @IdRes int normalResId, @IdRes int selectedResId, int normalTitleColor, int selectedTitleColor) {
             this.title = title;
@@ -169,6 +171,12 @@ public class TabLayoutBuilder extends XTabLayout {
             this.drawableSelectorId = drawableSelectorId;
             this.normalTitleColor = normalTitleColor;
             this.selectedTitleColor = selectedTitleColor;
+        }
+
+        public ItemStatus(CharSequence title, @IdRes int drawableSelectorId, int titleColorSelectorId) {
+            this.title = title;
+            this.drawableSelectorId = drawableSelectorId;
+            this.titleColorSelector = titleColorSelectorId;
         }
 
         private CharSequence getTitle() {
@@ -217,7 +225,9 @@ public class TabLayoutBuilder extends XTabLayout {
         text.setText(status.getTitle());
         //COMPLEX_UNIT_SP=2
         text.setTextSize(2, mTextSize);
-        text.setTextColor(status.getNormalTitleColor());
+
+        ColorStateList csl = (ColorStateList) getResources().getColorStateList(status.titleColorSelector);
+        text.setTextColor(csl);
 
         params = new LinearLayout.LayoutParams(inflate.getLayoutParams());
         params.gravity = Gravity.BOTTOM;

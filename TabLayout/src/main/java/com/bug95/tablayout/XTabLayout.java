@@ -245,14 +245,6 @@ public class XTabLayout extends HorizontalScrollView {
         public void onTabReselected(Tab tab);
     }
 
-    public interface OnCenterTabSelectedListener {
-        void onCenterTabSelected(Tab tab);
-
-        void onCenterTabUnselected(Tab tab);
-
-        void onCenterTabReselected(Tab tab);
-    }
-
     private final ArrayList<Tab> mTabs = new ArrayList<>();
     private Tab mSelectedTab;
 
@@ -288,6 +280,7 @@ public class XTabLayout extends HorizontalScrollView {
     private OnTabSelectedListener mSelectedListener;
     private final ArrayList<OnTabSelectedListener> mSelectedListeners = new ArrayList<>();
     private OnTabSelectedListener mCurrentVpSelectedListener;
+    private OnCenterTabSelectedListener mCenterTabSelectedListener;
 
     private ValueAnimatorCompat mScrollAnimator;
 
@@ -575,6 +568,11 @@ public class XTabLayout extends HorizontalScrollView {
      */
     public void clearOnTabSelectedListeners() {
         mSelectedListeners.clear();
+    }
+
+    public void setOnCenterTabSelectedListener(OnCenterTabSelectedListener listener) {
+        mCenterTabSelectedListener = listener;
+        ((ViewPagerOnTabSelectedListener) mCurrentVpSelectedListener).setCenterTabSelectedListener(listener);
     }
 
     /**
@@ -911,6 +909,10 @@ public class XTabLayout extends HorizontalScrollView {
             removeOnTabSelectedListener(mCurrentVpSelectedListener);
             mCurrentVpSelectedListener = null;
         }
+
+        if (mCenterTabSelectedListener != null) {
+            mCenterTabSelectedListener = null;
+        }
     }
 
     private void addBaseListener(ViewPager viewPager, boolean autoRefresh) {
@@ -924,7 +926,7 @@ public class XTabLayout extends HorizontalScrollView {
         // Now we'll add a tab selected listener to set ViewPager's current item
         // 中央按钮被点击也会被ViewPagerOnTabSelectedListener监听到，但是需要做特殊处理
         // 所以需要传入中央按钮点击监听器
-        mCurrentVpSelectedListener = new ViewPagerOnTabSelectedListener(viewPager, mTabStrip.getChildCount(), mHasCenterTab);
+        mCurrentVpSelectedListener = new ViewPagerOnTabSelectedListener(viewPager, mTabStrip.getChildCount(), mHasCenterTab, mCenterTabSelectedListener);
 
         addOnTabSelectedListener(mCurrentVpSelectedListener);
 
@@ -2332,15 +2334,21 @@ public class XTabLayout extends HorizontalScrollView {
         private final ViewPager mViewPager;
         private int mHalfTabPosition = -1;
         private boolean mHasCenterTab;
+        private OnCenterTabSelectedListener mCenterTabSelectedListener;
 
         public ViewPagerOnTabSelectedListener(ViewPager viewPager) {
             mViewPager = viewPager;
         }
 
-        public ViewPagerOnTabSelectedListener(ViewPager viewPager, int tabCount, boolean hasCenterTab) {
+        public ViewPagerOnTabSelectedListener(ViewPager viewPager, int tabCount, boolean hasCenterTab, OnCenterTabSelectedListener listener) {
             mViewPager = viewPager;
             mHalfTabPosition = tabCount / 2;
             mHasCenterTab = hasCenterTab;
+            mCenterTabSelectedListener = listener;
+        }
+
+        public void setCenterTabSelectedListener(OnCenterTabSelectedListener centerTabSelectedListener) {
+            this.mCenterTabSelectedListener = centerTabSelectedListener;
         }
 
         @Override
@@ -2355,6 +2363,9 @@ public class XTabLayout extends HorizontalScrollView {
 
             if (position == mHalfTabPosition) {
                 // 需要加入中央按钮点击处理逻辑
+                if (mCenterTabSelectedListener != null) {
+                    mCenterTabSelectedListener.onCenterTabSelected(tab);
+                }
                 return;
             }
 
@@ -2371,7 +2382,21 @@ public class XTabLayout extends HorizontalScrollView {
 
         @Override
         public void onTabReselected(XTabLayout.Tab tab) {
-            // No-op
+            View view = tab.getCustomView();
+            if (tab.getPosition() == mHalfTabPosition && view != null) {
+                // 中央按钮再次点击时，取消选中状态
+                if (view.isSelected()) {
+                    view.setSelected(false);
+                    if (mCenterTabSelectedListener != null) {
+                        mCenterTabSelectedListener.onCenterTabUnselected(tab);
+                    }
+                } else {
+                    view.setSelected(true);
+                    if (mCenterTabSelectedListener != null) {
+                        mCenterTabSelectedListener.onCenterTabSelected(tab);
+                    }
+                }
+            }
         }
     }
 

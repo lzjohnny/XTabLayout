@@ -7,9 +7,12 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.Toast;
 
+import com.bug95.tablayout.OnCenterTabSelectedListener;
 import com.bug95.tablayout.TabLayoutBuilder;
 import com.bug95.tablayout.XPagerAdapter;
+import com.bug95.tablayout.XTabLayout;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,7 +27,6 @@ public class MainActivity extends AppCompatActivity {
         Resources resources = getResources();
         //inflate TabLayoutBuilder
         TabLayoutBuilder tabLayout = (TabLayoutBuilder) findViewById(R.id.tab_layout);
-        final int[] textColor = {0xff333333, 0xffffffff};
         int[] resId = {
                 R.drawable.heart_selector,
                 R.drawable.ufo_selector,
@@ -46,9 +48,20 @@ public class MainActivity extends AppCompatActivity {
         tabLayout.setTabTitle(tabTitle);
         tabLayout.setCenterIcon(R.drawable.center_tab_selector);
         tabLayout.setCenterTitle("中心按钮");
-        tabLayout.setTextColor(textColor);
+        tabLayout.setTextColorId(R.drawable.text_color_selector);
         tabLayout.setBottomMargin(2);//set the bottomMargin --unit:dp
         tabLayout.setTextSize(12);//set title size --unit:sp
+        tabLayout.setOnCenterTabSelectedListener(new OnCenterTabSelectedListener() {
+            @Override
+            public void onCenterTabSelected(XTabLayout.Tab tab) {
+                Toast.makeText(MainActivity.this, "选中", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onCenterTabUnselected(XTabLayout.Tab tab) {
+                Toast.makeText(MainActivity.this, "未选中", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         tabLayout.build();
     }
