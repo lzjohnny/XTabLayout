@@ -4,10 +4,9 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.Toast;
 
 import com.bug95.tablayout.OnCenterTabSelectedListener;
 import com.bug95.tablayout.TabLayoutBuilder;
@@ -51,15 +50,21 @@ public class MainActivity extends AppCompatActivity {
         tabLayout.setTextColorId(R.drawable.text_color_selector);
         tabLayout.setBottomMargin(2);//set the bottomMargin --unit:dp
         tabLayout.setTextSize(12);//set title size --unit:sp
+
+        final ActionBar actionBar = getSupportActionBar();
         tabLayout.setOnCenterTabSelectedListener(new OnCenterTabSelectedListener() {
             @Override
             public void onCenterTabSelected(XTabLayout.Tab tab) {
-                Toast.makeText(MainActivity.this, "选中", Toast.LENGTH_SHORT).show();
+                if (actionBar != null) {
+                    actionBar.setTitle("选中");
+                }
             }
 
             @Override
             public void onCenterTabUnselected(XTabLayout.Tab tab) {
-                Toast.makeText(MainActivity.this, "未选中", Toast.LENGTH_SHORT).show();
+                if (actionBar != null) {
+                    actionBar.setTitle(R.string.app_name);
+                }
             }
         });
 

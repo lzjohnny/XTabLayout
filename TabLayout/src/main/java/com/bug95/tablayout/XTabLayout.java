@@ -2377,7 +2377,11 @@ public class XTabLayout extends HorizontalScrollView {
 
         @Override
         public void onTabUnselected(XTabLayout.Tab tab) {
-            // No-op
+            if (tab.getPosition() == mHalfTabPosition) {
+                if (mCenterTabSelectedListener != null) {
+                    mCenterTabSelectedListener.onCenterTabUnselected(tab);
+                }
+            }
         }
 
         @Override
