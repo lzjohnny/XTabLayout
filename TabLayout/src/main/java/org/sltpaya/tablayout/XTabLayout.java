@@ -73,76 +73,6 @@ import static android.support.v4.view.ViewPager.SCROLL_STATE_DRAGGING;
 import static android.support.v4.view.ViewPager.SCROLL_STATE_IDLE;
 import static android.support.v4.view.ViewPager.SCROLL_STATE_SETTLING;
 
-/**
- * TabLayout provides a horizontal layout to display tabs.
- *
- * <p>Population of the tabs to display is
- * done through {@link Tab} instances. You create tabs via {@link #newTab()}. From there you can
- * change the tab's label or icon via {@link Tab#setText(int)} and {@link Tab#setIcon(int)}
- * respectively. To display the tab, you need to add it to the layout via one of the
- * {@link #addTab(Tab)} methods. For example:
- * <pre>
- * TabLayout tabLayout = ...;
- * tabLayout.addTab(tabLayout.newTab().setText("Tab 1"));
- * tabLayout.addTab(tabLayout.newTab().setText("Tab 2"));
- * tabLayout.addTab(tabLayout.newTab().setText("Tab 3"));
- * </pre>
- * You should set a listener via {@link #setOnTabSelectedListener(OnTabSelectedListener)} to be
- * notified when any tab's selection state has been changed.
- *
- * <p>You can also add items to TabLayout in your layout through the use of {@link XTabItem}.
- * An example usage is like so:</p>
- *
- * <pre>
- * &lt;android.support.design.widget.TabLayout
- *         android:layout_height=&quot;wrap_content&quot;
- *         android:layout_width=&quot;match_parent&quot;&gt;
- *
- *     &lt;android.support.design.widget.TabItem
- *             android:text=&quot;@string/tab_text&quot;/&gt;
- *
- *     &lt;android.support.design.widget.TabItem
- *             android:icon=&quot;@drawable/ic_android&quot;/&gt;
- *
- * &lt;/android.support.design.widget.TabLayout&gt;
- * </pre>
- *
- * <h3>ViewPager integration</h3>
- * <p>
- * If you're using a {@link ViewPager} together
- * with this layout, you can call {@link #setupWithViewPager(ViewPager)} to link the two together.
- * This layout will be automatically populated from the {@link PagerAdapter}'s page titles.</p>
- *
- * <p>
- * This view also supports being used as part of a ViewPager's decor, and can be added
- * directly to the ViewPager in a layout resource file like so:</p>
- *
- * <pre>
- * &lt;android.support.v4.view.ViewPager
- *     android:layout_width=&quot;match_parent&quot;
- *     android:layout_height=&quot;match_parent&quot;&gt;
- *
- *     &lt;android.support.design.widget.TabLayout
- *         android:layout_width=&quot;match_parent&quot;
- *         android:layout_height=&quot;wrap_content&quot;
- *         android:layout_gravity=&quot;top&quot; /&gt;
- *
- * &lt;/android.support.v4.view.ViewPager&gt;
- * </pre>
- *
- * @see <a href="http://www.google.com/design/spec/components/tabs.html">Tabs</a>
- *
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPadding
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPaddingStart
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPaddingTop
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPaddingEnd
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPaddingBottom
- * @attr ref android.support.design.R.styleable#XTabLayout_tabContentStart
- * @attr ref android.support.design.R.styleable#XTabLayout_tabBackground
- * @attr ref android.support.design.R.styleable#XTabLayout_tabMinWidth
- * @attr ref android.support.design.R.styleable#XTabLayout_tabMaxWidth
- * @attr ref android.support.design.R.styleable#XTabLayout_tabTextAppearance
- */
 @ViewPager.DecorView
 public class XTabLayout extends HorizontalScrollView {
 
@@ -184,7 +114,8 @@ public class XTabLayout extends HorizontalScrollView {
     @RestrictTo(LIBRARY_GROUP)
     @IntDef(value = {MODE_SCROLLABLE, MODE_FIXED})
     @Retention(RetentionPolicy.SOURCE)
-    public @interface Mode {}
+    public @interface Mode {
+    }
 
     /**
      * Gravity used to fill the {@link XTabLayout} as much as possible. This option only takes effect
@@ -209,7 +140,8 @@ public class XTabLayout extends HorizontalScrollView {
     @RestrictTo(LIBRARY_GROUP)
     @IntDef(flag = true, value = {GRAVITY_FILL, GRAVITY_CENTER})
     @Retention(RetentionPolicy.SOURCE)
-    public @interface TabGravity {}
+    public @interface TabGravity {
+    }
 
     /**
      * Callback interface invoked when a tab's selection state changes.
@@ -373,7 +305,6 @@ public class XTabLayout extends HorizontalScrollView {
      * Sets the tab indicator's color for the currently selected tab.
      *
      * @param color color to use for the indicator
-     *
      * @attr ref android.support.design.R.styleable#XTabLayout_tabIndicatorColor
      */
     public void setSelectedTabIndicatorColor(@ColorInt int color) {
@@ -384,29 +315,18 @@ public class XTabLayout extends HorizontalScrollView {
      * Sets the tab indicator's height for the currently selected tab.
      *
      * @param height height to use for the indicator in pixels
-     *
      * @attr ref android.support.design.R.styleable#XTabLayout_tabIndicatorHeight
      */
     public void setSelectedTabIndicatorHeight(int height) {
         mTabStrip.setSelectedIndicatorHeight(height);
     }
 
-    /**
-     * Set the scroll position of the tabs. This is useful for when the tabs are being displayed as
-     * part of a scrolling container such as {@link ViewPager}.
-     * <p>
-     * Calling this method does not update the selected tab, it is only used for drawing purposes.
-     *
-     * @param position current scroll position
-     * @param positionOffset Value from [0, 1) indicating the offset from {@code position}.
-     * @param updateSelectedText Whether to update the text's selected state.
-     */
     public void setScrollPosition(int position, float positionOffset, boolean updateSelectedText) {
         setScrollPosition(position, positionOffset, updateSelectedText, true);
     }
 
     void setScrollPosition(int position, float positionOffset, boolean updateSelectedText,
-            boolean updateIndicatorPosition) {
+                           boolean updateIndicatorPosition) {
         final int roundedPosition = Math.round(position + positionOffset);
         if (roundedPosition < 0 || roundedPosition >= mTabStrip.getChildCount()) {
             return;
@@ -433,44 +353,18 @@ public class XTabLayout extends HorizontalScrollView {
         return mTabStrip.getIndicatorPosition();
     }
 
-    /**
-     * Add a tab to this layout. The tab will be added at the end of the list.
-     * If this is the first tab to be added it will become the selected tab.
-     *
-     * @param tab Tab to add
-     */
     public void addTab(@NonNull Tab tab) {
         addTab(tab, mTabs.isEmpty());
     }
 
-    /**
-     * Add a tab to this layout. The tab will be inserted at <code>position</code>.
-     * If this is the first tab to be added it will become the selected tab.
-     *
-     * @param tab The tab to add
-     * @param position The new position of the tab
-     */
     public void addTab(@NonNull Tab tab, int position) {
         addTab(tab, position, mTabs.isEmpty());
     }
 
-    /**
-     * Add a tab to this layout. The tab will be added at the end of the list.
-     *
-     * @param tab Tab to add
-     * @param setSelected True if the added tab should become the selected tab.
-     */
     public void addTab(@NonNull Tab tab, boolean setSelected) {
         addTab(tab, mTabs.size(), setSelected);
     }
 
-    /**
-     * Add a tab to this layout. The tab will be inserted at <code>position</code>.
-     *
-     * @param tab The tab to add
-     * @param position The new position of the tab
-     * @param setSelected True if the added tab should become the selected tab.
-     */
     public void addTab(@NonNull Tab tab, int position, boolean setSelected) {
         if (tab.mParent != this) {
             throw new IllegalArgumentException("Tab belongs to a different TabLayout.");
@@ -519,15 +413,6 @@ public class XTabLayout extends HorizontalScrollView {
         }
     }
 
-    /**
-     * Add a {@link XTabLayout.OnTabSelectedListener} that will be invoked when tab selection
-     * changes.
-     *
-     * <p>Components that add a listener should take care to remove it when finished via
-     * {@link #removeOnTabSelectedListener(OnTabSelectedListener)}.</p>
-     *
-     * @param listener listener to add
-     */
     public void addOnTabSelectedListener(@NonNull OnTabSelectedListener listener) {
         if (!mSelectedListeners.contains(listener)) {
             mSelectedListeners.add(listener);
@@ -644,7 +529,7 @@ public class XTabLayout extends HorizontalScrollView {
             removeTabViewAt(i);
         }
 
-        for (final Iterator<Tab> i = mTabs.iterator(); i.hasNext();) {
+        for (final Iterator<Tab> i = mTabs.iterator(); i.hasNext(); ) {
             final Tab tab = i.next();
             i.remove();
             tab.reset();
@@ -666,7 +551,6 @@ public class XTabLayout extends HorizontalScrollView {
      * </ul>
      *
      * @param mode one of {@link #MODE_FIXED} or {@link #MODE_SCROLLABLE}.
-     *
      * @attr ref android.support.design.R.styleable#XTabLayout_tabMode
      */
     public void setTabMode(@Mode int mode) {
@@ -690,7 +574,6 @@ public class XTabLayout extends HorizontalScrollView {
      * Set the gravity to use when laying out the tabs.
      *
      * @param gravity one of {@link #GRAVITY_CENTER} or {@link #GRAVITY_FILL}.
-     *
      * @attr ref android.support.design.R.styleable#XTabLayout_tabGravity
      */
     public void setTabGravity(@TabGravity int gravity) {
@@ -722,60 +605,25 @@ public class XTabLayout extends HorizontalScrollView {
         }
     }
 
-    /**
-     * Gets the text colors for the different states (normal, selected) used for the tabs.
-     */
     @Nullable
     public ColorStateList getTabTextColors() {
         return mTabTextColors;
     }
 
-    /**
-     * Sets the text colors for the different states (normal, selected) used for the tabs.
-     *
-     * @attr ref android.support.design.R.styleable#XTabLayout_tabTextColor
-     * @attr ref android.support.design.R.styleable#XTabLayout_tabSelectedTextColor
-     */
     public void setTabTextColors(int normalColor, int selectedColor) {
         setTabTextColors(createColorStateList(normalColor, selectedColor));
     }
 
-    /**
-     * The one-stop shop for setting up this {@link XTabLayout} with a {@link ViewPager}.
-     *
-     * <p>This is the same as calling {@link #setupWithViewPager(ViewPager, boolean)} with
-     * auto-refresh enabled.</p>
-     *
-     * @param viewPager the ViewPager to link to, or {@code null} to clear any previous link
-     */
     public void setupWithViewPager(@Nullable ViewPager viewPager) {
         setupWithViewPager(viewPager, true);
     }
 
-    /**
-     * The one-stop shop for setting up this {@link XTabLayout} with a {@link ViewPager}.
-     *
-     * <p>This method will link the given ViewPager and this TabLayout together so that
-     * changes in one are automatically reflected in the other. This includes scroll state changes
-     * and clicks. The tabs displayed in this layout will be populated
-     * from the ViewPager adapter's page titles.</p>
-     *
-     * <p>If {@code autoRefresh} is {@code true}, any changes in the {@link PagerAdapter} will
-     * trigger this layout to re-populate itself from the adapter's titles.</p>
-     *
-     * <p>If the given ViewPager is non-null, it needs to already have a
-     * {@link PagerAdapter} set.</p>
-     *
-     * @param viewPager   the ViewPager to link to, or {@code null} to clear any previous link
-     * @param autoRefresh whether this layout should refresh its contents if the given ViewPager's
-     *                    content changes
-     */
     public void setupWithViewPager(@Nullable final ViewPager viewPager, boolean autoRefresh) {
         setupWithViewPager(viewPager, autoRefresh, false);
     }
 
     private void setupWithViewPager(@Nullable final ViewPager viewPager, boolean autoRefresh,
-            boolean implicitSetup) {
+                                    boolean implicitSetup) {
         if (mViewPager != null) {
             // If we've already been setup with a ViewPager, remove us from it
             if (mPageChangeListener != null) {
@@ -834,8 +682,8 @@ public class XTabLayout extends HorizontalScrollView {
 
     /**
      * @deprecated Use {@link #setupWithViewPager(ViewPager)} to link a TabLayout with a ViewPager
-     *             together. When that method is used, the TabLayout will be automatically updated
-     *             when the {@link PagerAdapter} is changed.
+     * together. When that method is used, the TabLayout will be automatically updated
+     * when the {@link PagerAdapter} is changed.
      */
     @Deprecated
     public void setTabsFromPagerAdapter(@Nullable final PagerAdapter adapter) {
@@ -908,6 +756,13 @@ public class XTabLayout extends HorizontalScrollView {
             for (int i = 0; i < adapterCount; i++) {
                 addTab(newTab().setText(mPagerAdapter.getPageTitle(i)), false);
             }
+
+            // All tabs have been added into SlidingTabStrip object
+            int tabsCount = mTabs.size();
+            int centerTabIndex1 = (tabsCount / 2) - 1;
+            int centerTabIndex2 = tabsCount / 2;
+            ViewUtils.setMargins(mTabs.get(centerTabIndex1).getView(), 0, 0, 150, 0);
+            ViewUtils.setMargins(mTabs.get(centerTabIndex2).getView(), 150, 0, 0, 0);
 
             // Make sure we reflect the currently set ViewPager item
             if (mViewPager != null && adapterCount > 0) {
@@ -1262,6 +1117,9 @@ public class XTabLayout extends HorizontalScrollView {
             return this;
         }
 
+        public View getView() {
+            return mView;
+        }
 
         /**
          * Returns the custom view used for this tab.
@@ -1713,7 +1571,7 @@ public class XTabLayout extends HorizontalScrollView {
         }
 
         private void updateTextAndIcon(@Nullable final TextView textView,
-                @Nullable final ImageView iconView) {
+                                       @Nullable final ImageView iconView) {
             final Drawable icon = mTab != null ? mTab.getIcon() : null;
             final CharSequence text = mTab != null ? mTab.getText() : null;
             final CharSequence contentDesc = mTab != null ? mTab.getContentDescription() : null;
@@ -2106,7 +1964,7 @@ public class XTabLayout extends HorizontalScrollView {
      * A {@link ViewPager.OnPageChangeListener} class which contains the
      * necessary calls back to the provided {@link XTabLayout} so that the tab position is
      * kept in sync.
-     *
+     * <p>
      * <p>This class stores the provided TabLayout weakly, meaning that you can use
      * {@link ViewPager#addOnPageChangeListener(ViewPager.OnPageChangeListener)
      * addOnPageChangeListener(OnPageChangeListener)} without removing the listener and
@@ -2129,7 +1987,7 @@ public class XTabLayout extends HorizontalScrollView {
 
         @Override
         public void onPageScrolled(final int position, final float positionOffset,
-                final int positionOffsetPixels) {
+                                   final int positionOffsetPixels) {
             final XTabLayout tabLayout = mTabLayoutRef.get();
             if (tabLayout != null) {
                 // Only update the text selection if we're not settling, or we are settling after
@@ -2214,7 +2072,7 @@ public class XTabLayout extends HorizontalScrollView {
 
         @Override
         public void onAdapterChanged(@NonNull ViewPager viewPager,
-                @Nullable PagerAdapter oldAdapter, @Nullable PagerAdapter newAdapter) {
+                                     @Nullable PagerAdapter oldAdapter, @Nullable PagerAdapter newAdapter) {
             if (mViewPager == viewPager) {
                 setPagerAdapter(newAdapter, mAutoRefresh);
             }
