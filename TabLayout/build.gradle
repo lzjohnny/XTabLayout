@@ -5,13 +5,13 @@ group='com.github.sltpaya'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    buildToolsVersion "26.0.2"
 
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 25
         versionCode 1
-        versionName "25.1.0"
+        versionName "26.0.2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

@@ -41,12 +41,14 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.PointerIconCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v4.widget.TextViewCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.content.res.AppCompatResources;
 import android.text.Layout;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -54,11 +56,15 @@ import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -74,7 +80,7 @@ import static android.support.v4.view.ViewPager.SCROLL_STATE_IDLE;
 import static android.support.v4.view.ViewPager.SCROLL_STATE_SETTLING;
 
 @ViewPager.DecorView
-public class XTabLayout extends HorizontalScrollView {
+public class XTabLayout extends FrameLayout {
 
     private static final int DEFAULT_HEIGHT_WITH_TEXT_ICON = 72; // dps
     static final int DEFAULT_GAP_TEXT_ICON = 8; // dps
@@ -171,6 +177,7 @@ public class XTabLayout extends HorizontalScrollView {
         public void onTabReselected(Tab tab);
     }
 
+    private Context mContext;
     private final ArrayList<Tab> mTabs = new ArrayList<>();
     private Tab mSelectedTab;
 
@@ -197,6 +204,7 @@ public class XTabLayout extends HorizontalScrollView {
 
     int mTabGravity;
     int mMode;
+    int mCenterTabWidth;
 
     private OnTabSelectedListener mSelectedListener;
     private final ArrayList<OnTabSelectedListener> mSelectedListeners = new ArrayList<>();
@@ -210,6 +218,7 @@ public class XTabLayout extends HorizontalScrollView {
     private TabLayoutOnPageChangeListener mPageChangeListener;
     private AdapterChangeListener mAdapterChangeListener;
     private boolean mSetupViewPagerImplicitly;
+    private boolean mHasCenterButton;
 
     // Pool we use as a simple RecyclerBin
     private final Pools.Pool<TabView> mTabViewPool = new Pools.SimplePool<>(12);
@@ -224,6 +233,7 @@ public class XTabLayout extends HorizontalScrollView {
 
     public XTabLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        mContext = context;
         setClipChildren(false);
 
         ThemeUtils.checkAppCompatTheme(context);
@@ -290,6 +300,7 @@ public class XTabLayout extends HorizontalScrollView {
         mContentInsetStart = a.getDimensionPixelSize(R.styleable.XTabLayout_tabContentStart, 0);
         mMode = a.getInt(R.styleable.XTabLayout_xtabMode, MODE_FIXED);
         mTabGravity = a.getInt(R.styleable.XTabLayout_xtabGravity, GRAVITY_FILL);
+        mCenterTabWidth = a.getDimensionPixelSize(R.styleable.XTabLayout_centerButtonWidth, INVALID_WIDTH);
         a.recycle();
 
         // TODO add attr for these
@@ -614,6 +625,52 @@ public class XTabLayout extends HorizontalScrollView {
         setTabTextColors(createColorStateList(normalColor, selectedColor));
     }
 
+    public void prepareForCenterTab() {
+        if (mCenterTabWidth == 0) {
+            return;
+        }
+
+        ViewTreeObserver vto = mTabStrip.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                mTabStrip.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                int mTabStripWidth = mTabStrip.getWidth(); // The width of view, in pixels.
+                int tabsCount = mTabs.size();
+
+                if (mCenterTabWidth == -1) {
+                    mCenterTabWidth = mTabStripWidth / (tabsCount + 1);
+                }
+
+                addCenterTab();
+            }
+        });
+    }
+
+    private void addCenterTab() {
+        mHasCenterButton = true;
+        // All tabs have been added into SlidingTabStrip object
+        int tabsCount = mTabs.size();
+        int centerTabIndex1 = (tabsCount / 2) - 1;
+        int centerTabIndex2 = tabsCount / 2;
+        ViewUtils.setMargins(mTabs.get(centerTabIndex1).getView(), 0, 0, mCenterTabWidth / 2, 0);
+        ViewUtils.setMargins(mTabs.get(centerTabIndex2).getView(), mCenterTabWidth / 2, 0, 0, 0);
+
+        LinearLayout centerTab = new LinearLayout(mContext);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(mCenterTabWidth, ViewGroup.LayoutParams.MATCH_PARENT);
+        params.gravity = Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM;
+        centerTab.setLayoutParams(params);
+        XTabLayout.super.addView(centerTab, 0, centerTab.getLayoutParams());
+
+//        Tab tab = newTab();
+//        tab.setText("CenterTab");
+//        TabView tabView = createTabView(tab);
+//        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(mCenterTabWidth, ViewGroup.LayoutParams.MATCH_PARENT);
+//        params.gravity = Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM;
+//        tabView.setLayoutParams(params);
+//        XTabLayout.super.addView(tabView, 0, tabView.getLayoutParams());
+    }
+
     public void setupWithViewPager(@Nullable ViewPager viewPager) {
         setupWithViewPager(viewPager, true);
     }
@@ -757,13 +814,6 @@ public class XTabLayout extends HorizontalScrollView {
                 addTab(newTab().setText(mPagerAdapter.getPageTitle(i)), false);
             }
 
-            // All tabs have been added into SlidingTabStrip object
-            int tabsCount = mTabs.size();
-            int centerTabIndex1 = (tabsCount / 2) - 1;
-            int centerTabIndex2 = tabsCount / 2;
-            ViewUtils.setMargins(mTabs.get(centerTabIndex1).getView(), 0, 0, 150, 0);
-            ViewUtils.setMargins(mTabs.get(centerTabIndex2).getView(), 150, 0, 0, 0);
-
             // Make sure we reflect the currently set ViewPager item
             if (mViewPager != null && adapterCount > 0) {
                 final int curItem = mViewPager.getCurrentItem();
@@ -883,10 +933,10 @@ public class XTabLayout extends HorizontalScrollView {
         // Now super measure itself using the (possibly) modified height spec
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        if (getChildCount() == 1) {
+        if (getChildCount() == 1 || mHasCenterButton) {
             // If we're in fixed mode then we need to make the tab strip is the same width as us
             // so we don't scroll
-            final View child = getChildAt(0);
+            final View child = getChildAt(getChildCount() - 1);
             boolean remeasure = false;
 
             switch (mMode) {
