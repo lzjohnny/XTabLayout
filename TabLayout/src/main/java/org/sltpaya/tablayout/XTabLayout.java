@@ -80,7 +80,7 @@ import static android.support.v4.view.ViewPager.SCROLL_STATE_IDLE;
 import static android.support.v4.view.ViewPager.SCROLL_STATE_SETTLING;
 
 @ViewPager.DecorView
-public class XTabLayout extends FrameLayout {
+public class XTabLayout extends HorizontalScrollView {
 
     private static final int DEFAULT_HEIGHT_WITH_TEXT_ICON = 72; // dps
     static final int DEFAULT_GAP_TEXT_ICON = 8; // dps
@@ -182,6 +182,7 @@ public class XTabLayout extends FrameLayout {
     private Tab mSelectedTab;
 
     private final SlidingTabStrip mTabStrip;
+    private final ContentRoot mContentRoot;
 
     int mTabPaddingStart;
     int mTabPaddingTop;
@@ -241,10 +242,14 @@ public class XTabLayout extends FrameLayout {
         // Disable the Scroll Bar
         setHorizontalScrollBarEnabled(false);
 
+        mContentRoot = new ContentRoot(context);
+        super.addView(mContentRoot, 0, new LayoutParams(
+                LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
+
         // Add the TabStrip
         mTabStrip = new SlidingTabStrip(context);
-        super.addView(mTabStrip, 0, new LayoutParams(
-                LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
+        mContentRoot.addView(mTabStrip, 0, new LayoutParams(
+                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.XTabLayout,
                 defStyleAttr, R.style.Widget_Design_xTabLayout);
@@ -657,10 +662,11 @@ public class XTabLayout extends FrameLayout {
         ViewUtils.setMargins(mTabs.get(centerTabIndex2).getView(), mCenterTabWidth / 2, 0, 0, 0);
 
         LinearLayout centerTab = new LinearLayout(mContext);
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(mCenterTabWidth, ViewGroup.LayoutParams.MATCH_PARENT);
-        params.gravity = Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM;
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(mCenterTabWidth, ViewGroup.LayoutParams.MATCH_PARENT);
+        params.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         centerTab.setLayoutParams(params);
-        XTabLayout.super.addView(centerTab, 0, centerTab.getLayoutParams());
+        mContentRoot.addView(centerTab, 0, centerTab.getLayoutParams());
 
 //        Tab tab = newTab();
 //        tab.setText("CenterTab");
@@ -1957,6 +1963,59 @@ public class XTabLayout extends FrameLayout {
                         mIndicatorRight, getHeight(), mSelectedIndicatorPaint);
             }
         }
+    }
+
+    private class ContentRoot extends RelativeLayout {
+
+        public ContentRoot(Context context) {
+            super(context);
+            setClipChildren(false);
+        }
+
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            final int idealHeight = dpToPx(getDefaultHeight()) + getPaddingTop() + getPaddingBottom();
+            switch (MeasureSpec.getMode(heightMeasureSpec)) {
+                case MeasureSpec.AT_MOST:
+                    heightMeasureSpec = MeasureSpec.makeMeasureSpec(
+                            Math.min(idealHeight, MeasureSpec.getSize(heightMeasureSpec)),
+                            MeasureSpec.EXACTLY);
+                    break;
+                case MeasureSpec.UNSPECIFIED:
+                    heightMeasureSpec = MeasureSpec.makeMeasureSpec(idealHeight, MeasureSpec.EXACTLY);
+                    break;
+            }
+
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+            if (getChildCount() == 1) {
+                // If we're in fixed mode then we need to make the tab strip is the same width as us
+                // so we don't scroll
+                final View child = getChildAt(0);
+                boolean remeasure = false;
+
+                switch (mMode) {
+                    case MODE_SCROLLABLE:
+                        // We only need to resize the child if it's smaller than us. This is similar
+                        // to fillViewport
+                        remeasure = child.getMeasuredWidth() < getMeasuredWidth();
+                        break;
+                    case MODE_FIXED:
+                        // Resize the child so that it doesn't scroll
+                        remeasure = child.getMeasuredWidth() != getMeasuredWidth();
+                        break;
+                }
+
+                if (remeasure) {
+                    // Re-measure the child with a widthSpec set to be exactly our measure width
+                    int childHeightMeasureSpec = getChildMeasureSpec(heightMeasureSpec, getPaddingTop()
+                            + getPaddingBottom(), child.getLayoutParams().height);
+                    int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
+                            getMeasuredWidth(), MeasureSpec.EXACTLY);
+                    child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+                }
+            }
+        }
+
     }
 
     private static ColorStateList createColorStateList(int defaultColor, int selectedColor) {

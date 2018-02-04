@@ -59,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
         tabLayout.build();
     }
 
-
     private class MyAdapter extends FragmentPagerAdapter {
 
         private String[] titles;
