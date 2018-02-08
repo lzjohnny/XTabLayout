@@ -661,8 +661,8 @@ public class XTabLayout extends HorizontalScrollView {
         ViewUtils.setMargins(mTabs.get(centerTabIndex1).getView(), 0, 0, mCenterTabWidth / 2, 0);
         ViewUtils.setMargins(mTabs.get(centerTabIndex2).getView(), mCenterTabWidth / 2, 0, 0, 0);
 
-        LinearLayout centerTab = new LinearLayout(mContext);
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(mCenterTabWidth, ViewGroup.LayoutParams.MATCH_PARENT);
+        MyLinearLayout centerTab = new MyLinearLayout(mContext);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(mCenterTabWidth, 200);
         params.addRule(RelativeLayout.CENTER_HORIZONTAL);
         params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         centerTab.setLayoutParams(params);
@@ -1735,7 +1735,7 @@ public class XTabLayout extends HorizontalScrollView {
 
         SlidingTabStrip(Context context) {
             super(context);
-            setClipChildren(false);
+//            setClipChildren(false);
             setWillNotDraw(false);
             mSelectedIndicatorPaint = new Paint();
         }
