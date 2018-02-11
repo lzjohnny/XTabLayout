@@ -7,6 +7,8 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.widget.Toast;
 
 import org.sltpaya.tablayout.TabLayoutBuilder;
 
@@ -55,6 +57,12 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < tabCount; i++) {
             tabLayout.addTab(new TabLayoutBuilder.ItemStatus(title[i], resId[i], textColor[0], textColor[1]));
         }
+        tabLayout.setOnCenterTabClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(MainActivity.this, "center click!", Toast.LENGTH_SHORT).show();
+            }
+        });
         //show tabView to your screen
         tabLayout.build();
     }

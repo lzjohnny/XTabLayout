@@ -21,6 +21,7 @@ public class TabLayoutBuilder extends XTabLayout {
     private ArrayList<ItemStatus> mItemStatus = new ArrayList<>();
     private int mBottomMargin;
     private float mTextSize;
+    private OnClickListener mCenterTabOnClickListener;
 
     {
         listener = new OnTabSelectedListener() {
@@ -104,6 +105,10 @@ public class TabLayoutBuilder extends XTabLayout {
         mTextSize = sp;
     }
 
+    public void setOnCenterTabClickListener(View.OnClickListener onClickListener) {
+        mCenterTabOnClickListener = onClickListener;
+    }
+
     /**
      * <p>Must call {@link #addTab(ItemStatus)} before</p>
      *
@@ -117,16 +122,9 @@ public class TabLayoutBuilder extends XTabLayout {
             XTabLayout.Tab tab = this.getTabAt(i);
             if (tab != null) {
                 tab.setCustomView(mItemViews.get(i));
-                if (i == 1) {
-                    tab.select();
-                    TextView view = getTextView(i);
-                    if (view != null) {
-                        view.setTextColor(mItemStatus.get(i).getSelectedTitleColor());
-                    }
-                }
             }
         }
-        prepareForCenterTab();
+        prepareForCenterTab(mCenterTabOnClickListener);
         addOnTabSelectedListener(listener);/*inner listener*/
     }
 

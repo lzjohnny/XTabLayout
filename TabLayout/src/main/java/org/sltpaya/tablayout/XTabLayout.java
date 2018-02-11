@@ -630,7 +630,16 @@ public class XTabLayout extends HorizontalScrollView {
         setTabTextColors(createColorStateList(normalColor, selectedColor));
     }
 
-    public void prepareForCenterTab() {
+    public void prepareForCenterTab(OnClickListener listener) {
+        if (mCenterTabWidth == 0) {
+            return;
+        }
+
+        ImageView imageView = (ImageView) View.inflate(mContext, R.layout.design_layout_tab_icon, null);
+        prepareForCenterTab(imageView, listener);
+    }
+
+    public void prepareForCenterTab(final View centerView, final OnClickListener listener) {
         if (mCenterTabWidth == 0) {
             return;
         }
@@ -646,13 +655,12 @@ public class XTabLayout extends HorizontalScrollView {
                 if (mCenterTabWidth == -1) {
                     mCenterTabWidth = mTabStripWidth / (tabsCount + 1);
                 }
-
-                addCenterTab();
+                doAddCenterTab(centerView, listener);
             }
         });
     }
 
-    private void addCenterTab() {
+    private void doAddCenterTab(View centerView, OnClickListener listener) {
         mHasCenterButton = true;
         // All tabs have been added into SlidingTabStrip object
         int tabsCount = mTabs.size();
@@ -661,20 +669,17 @@ public class XTabLayout extends HorizontalScrollView {
         ViewUtils.setMargins(mTabs.get(centerTabIndex1).getView(), 0, 0, mCenterTabWidth / 2, 0);
         ViewUtils.setMargins(mTabs.get(centerTabIndex2).getView(), mCenterTabWidth / 2, 0, 0, 0);
 
-        MyLinearLayout centerTab = new MyLinearLayout(mContext);
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(mCenterTabWidth, 200);
-        params.addRule(RelativeLayout.CENTER_HORIZONTAL);
-        params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        centerTab.setLayoutParams(params);
+        LinearLayout centerTab = new LinearLayout(mContext);
+        FrameLayout.LayoutParams frameLayoutParams = new FrameLayout.LayoutParams(mCenterTabWidth, LayoutParams.MATCH_PARENT);
+        frameLayoutParams.gravity = Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM;
+        centerTab.setLayoutParams(frameLayoutParams);
+        centerTab.setOnClickListener(listener);
         mContentRoot.addView(centerTab, 0, centerTab.getLayoutParams());
 
-//        Tab tab = newTab();
-//        tab.setText("CenterTab");
-//        TabView tabView = createTabView(tab);
-//        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(mCenterTabWidth, ViewGroup.LayoutParams.MATCH_PARENT);
-//        params.gravity = Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM;
-//        tabView.setLayoutParams(params);
-//        XTabLayout.super.addView(tabView, 0, tabView.getLayoutParams());
+        LinearLayout.LayoutParams linearLayoutParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        centerView.setLayoutParams(linearLayoutParams);
+        centerTab.addView(centerView, 0, centerView.getLayoutParams());
     }
 
     public void setupWithViewPager(@Nullable ViewPager viewPager) {
@@ -1735,7 +1740,7 @@ public class XTabLayout extends HorizontalScrollView {
 
         SlidingTabStrip(Context context) {
             super(context);
-//            setClipChildren(false);
+            setClipChildren(false);
             setWillNotDraw(false);
             mSelectedIndicatorPaint = new Paint();
         }
@@ -1965,7 +1970,7 @@ public class XTabLayout extends HorizontalScrollView {
         }
     }
 
-    private class ContentRoot extends RelativeLayout {
+    private class ContentRoot extends FrameLayout {
 
         public ContentRoot(Context context) {
             super(context);
