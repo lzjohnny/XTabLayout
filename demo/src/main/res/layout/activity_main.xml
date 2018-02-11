@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:clipChildren="false"
-    tools:context="org.sltpaya.demo.MainActivity">
+    tools:context="com.bug95.demo.MainActivity">
 
     <android.support.v4.view.ViewPager
         android:id="@+id/viewpager"
@@ -16,7 +16,7 @@
 
     </android.support.v4.view.ViewPager>
 
-    <org.sltpaya.tablayout.TabLayoutBuilder
+    <com.bug95.tablayout.TabLayoutBuilder
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/tab_layout"
         android:background="@android:color/holo_red_light"
@@ -25,5 +25,5 @@
         android:layout_width="match_parent"
         android:layout_height="50dp">
 
-    </org.sltpaya.tablayout.TabLayoutBuilder>
+    </com.bug95.tablayout.TabLayoutBuilder>
 </LinearLayout>

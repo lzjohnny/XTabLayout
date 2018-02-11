@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.sltpaya.tablayout;
+package com.bug95.tablayout;
 
 import android.support.v4.view.animation.FastOutLinearInInterpolator;
 import android.support.v4.view.animation.FastOutSlowInInterpolator;

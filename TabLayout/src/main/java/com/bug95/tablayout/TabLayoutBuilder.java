@@ -1,4 +1,4 @@
-package org.sltpaya.tablayout;
+package com.bug95.tablayout;
 
 import android.content.Context;
 import android.support.annotation.IdRes;
@@ -122,6 +122,13 @@ public class TabLayoutBuilder extends XTabLayout {
             XTabLayout.Tab tab = this.getTabAt(i);
             if (tab != null) {
                 tab.setCustomView(mItemViews.get(i));
+                if (i == 0) {
+                    tab.select();
+                    TextView view = getTextView(i);
+                    if (view != null) {
+                        view.setTextColor(mItemStatus.get(i).getSelectedTitleColor());
+                    }
+                }
             }
         }
         prepareForCenterTab(mCenterTabOnClickListener);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.sltpaya.tablayout;
+package com.bug95.tablayout;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;

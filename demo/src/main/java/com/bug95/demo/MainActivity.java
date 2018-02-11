@@ -1,4 +1,4 @@
-package org.sltpaya.demo;
+package com.bug95.demo;
 
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -10,7 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Toast;
 
-import org.sltpaya.tablayout.TabLayoutBuilder;
+import com.bug95.tablayout.TabLayoutBuilder;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         };
         //init viewpager
         ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
-        viewPager.setAdapter(new MyAdapter(getSupportFragmentManager(),title));
+        viewPager.setAdapter(new MyAdapter(getSupportFragmentManager(), title));
         //init TabLayout
         tabLayout.setupWithViewPager(viewPager);//setting up this TabLayout with ViewPager
         tabLayout.setBottomMargin(2);//set the bottomMargin --unit:dp
@@ -70,7 +70,8 @@ public class MainActivity extends AppCompatActivity {
     private class MyAdapter extends FragmentPagerAdapter {
 
         private String[] titles;
-        MyAdapter(FragmentManager fm,String[] titles) {
+
+        MyAdapter(FragmentManager fm, String[] titles) {
             super(fm);
             this.titles = titles;
         }
@@ -78,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public Fragment getItem(int position) {
             Bundle args = new Bundle();
-            args.putString("title",titles[position]);
+            args.putString("title", titles[position]);
             BlankFragment fragment = new BlankFragment();
             fragment.setArguments(args);
             return fragment;
