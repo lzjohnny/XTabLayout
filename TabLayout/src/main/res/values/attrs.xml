@@ -7,11 +7,11 @@
         <attr name="tabIndicatorScrollable" format="boolean"/>
         <attr name="tabContentStart" format="dimension"/>
         <attr name="tabBackground" format="reference"/>
-        <attr name="xTabMode">
+        <attr name="xtabMode">
             <enum name="scrollable" value="0"/>
             <enum name="fixed" value="1"/>
         </attr>
-        <attr name="xTabGravity">
+        <attr name="xtabGravity">
             <enum name="fill" value="0"/>
             <enum name="center" value="1"/>
         </attr>
@@ -25,11 +25,7 @@
         <attr name="tabPaddingEnd" format="dimension"/>
         <attr name="tabPaddingBottom" format="dimension"/>
         <attr name="tabPadding" format="dimension"/>
-
-        <attr name="hasCenterTab" format="boolean" />
-        <attr name="centerTabWidth" format="dimension" />
-        <attr name="centerTabHeight" format="dimension" />
-        <attr name="centerTabMarginBottom" format="dimension" />
+        <attr name="centerButtonWidth" format="dimension" />
     </declare-styleable>
 
 </resources>

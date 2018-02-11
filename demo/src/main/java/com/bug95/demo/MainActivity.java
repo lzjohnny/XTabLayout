@@ -4,16 +4,18 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.widget.Toast;
 
-import com.bug95.tablayout.OnCenterTabSelectedListener;
 import com.bug95.tablayout.TabLayoutBuilder;
-import com.bug95.tablayout.XPagerAdapter;
-import com.bug95.tablayout.XTabLayout;
 
 public class MainActivity extends AppCompatActivity {
+
+    //Tab count
+    private int tabCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,59 +28,48 @@ public class MainActivity extends AppCompatActivity {
         Resources resources = getResources();
         //inflate TabLayoutBuilder
         TabLayoutBuilder tabLayout = (TabLayoutBuilder) findViewById(R.id.tab_layout);
+        //Tab count
+        tabCount = 4;
+        //The textColor
+        final int[] textColor = {0xff333333, 0xffffffff};
+        //The Image res id
         int[] resId = {
                 R.drawable.heart_selector,
                 R.drawable.ufo_selector,
                 R.drawable.diamond_selector,
                 R.drawable.mine_selector
         };
-        String[] tabTitle = {
+        //The title
+        String[] title = {
                 resources.getString(R.string.log),
                 resources.getString(R.string.file),
                 resources.getString(R.string.tool),
                 resources.getString(R.string.setting),
         };
-
+        //init viewpager
         ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
-        viewPager.setAdapter(new MyAdapter(getSupportFragmentManager(), tabTitle));
-
-        tabLayout.setupWithXViewPager(viewPager); //在这里会完成Tab的实例化，接下来只需要设置Tab的布局View
-        tabLayout.setTabIcon(resId);
-        tabLayout.setTabTitle(tabTitle);
-        tabLayout.setCenterIcon(R.drawable.center_tab_selector);
-        tabLayout.setCenterTitle("中心按钮");
-        tabLayout.setTextColorId(R.drawable.text_color_selector);
+        viewPager.setAdapter(new MyAdapter(getSupportFragmentManager(), title));
+        //init TabLayout
+        tabLayout.setupWithViewPager(viewPager);//setting up this TabLayout with ViewPager
         tabLayout.setBottomMargin(2);//set the bottomMargin --unit:dp
         tabLayout.setTextSize(12);//set title size --unit:sp
-
-        final ActionBar actionBar = getSupportActionBar();
-        tabLayout.setOnCenterTabSelectedListener(new OnCenterTabSelectedListener() {
+        //add tab to TabLayout
+        for (int i = 0; i < tabCount; i++) {
+            tabLayout.addTab(new TabLayoutBuilder.ItemStatus(title[i], resId[i], textColor[0], textColor[1]));
+        }
+        tabLayout.setOnCenterTabClickListener(new View.OnClickListener() {
             @Override
-            public void onCenterTabSelected(XTabLayout.Tab tab) {
-                if (actionBar != null) {
-                    actionBar.setTitle("选中");
-                }
-            }
-
-            @Override
-            public void onCenterTabUnselected(XTabLayout.Tab tab) {
-                if (actionBar != null) {
-                    actionBar.setTitle(R.string.app_name);
-                }
+            public void onClick(View v) {
+                Toast.makeText(MainActivity.this, "center click!", Toast.LENGTH_SHORT).show();
             }
         });
-
+        //show tabView to your screen
         tabLayout.build();
     }
 
-
-    private class MyAdapter extends XPagerAdapter {
+    private class MyAdapter extends FragmentPagerAdapter {
 
         private String[] titles;
-
-        MyAdapter(FragmentManager fm) {
-            super(fm);
-        }
 
         MyAdapter(FragmentManager fm, String[] titles) {
             super(fm);
@@ -87,18 +78,16 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public Fragment getItem(int position) {
+            Bundle args = new Bundle();
+            args.putString("title", titles[position]);
             BlankFragment fragment = new BlankFragment();
-            if (titles != null && position < titles.length) {
-                Bundle args = new Bundle();
-                args.putString("title", titles[position]);
-                fragment.setArguments(args);
-            }
+            fragment.setArguments(args);
             return fragment;
         }
 
         @Override
         public int getCount() {
-            return 4;
+            return tabCount;
         }
     }
 }

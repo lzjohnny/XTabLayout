@@ -18,6 +18,8 @@ package com.bug95.tablayout;
 
 import android.graphics.PorterDuff;
 import android.os.Build;
+import android.view.View;
+import android.view.ViewGroup;
 
 class ViewUtils {
 
@@ -53,6 +55,17 @@ class ViewUtils {
                 return PorterDuff.Mode.SCREEN;
             default:
                 return defaultMode;
+        }
+    }
+
+    /**
+     * Set the margins of view, in pixels.
+     */
+    static void setMargins (View view, int left, int top, int right, int bottom) {
+        if (view.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams p = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+            p.setMargins(left, top, right, bottom);
+            view.requestLayout();
         }
     }
 

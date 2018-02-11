@@ -1,9 +1,7 @@
 package com.bug95.tablayout;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.support.annotation.IdRes;
-import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -12,27 +10,54 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import java.util.ArrayList;
 
 
 public class TabLayoutBuilder extends XTabLayout {
 
-    /**
-     * Item的属性封装在ItemStatus中，Layout每个Item的属性构成mItemStatusListList数组
-     * 每个根据ItemStatus属性填充而成的View对象，构成mItemViewsListList数组
-     * 等待build方法调用时，把mItemViewsListList每个View全部添加到TabLayout中
-     */
-    private ArrayList<View> mItemViewsList = new ArrayList<>();
+    private OnTabSelectedListener listener;
+    private ArrayList<View> mItemViews = new ArrayList<>();
+    private ArrayList<ItemStatus> mItemStatus = new ArrayList<>();
     private int mBottomMargin;
     private float mTextSize;
-    private int[] mTabResId;
-    private String[] mTabTitle;
-    private int mCenterResId;
-    private String mCenterTitle;
-    private int mTextColorId;
+    private OnClickListener mCenterTabOnClickListener;
 
-    private int mTabCount;
+    {
+        listener = new OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(Tab tab) {
+                int position = tab.getPosition();
+                ItemStatus status = mItemStatus.get(position);
+                TextView view = getTextView(position);
+                ImageView img = getImageView(position);
+                if (view != null) {
+                    view.setTextColor(mItemStatus.get(position).getSelectedTitleColor());
+                }
+                if (status.getSelectedResId() != 0 && img != null) {
+                    img.setImageResource(status.getSelectedResId());
+                }
+            }
+
+            @Override
+            public void onTabUnselected(Tab tab) {
+                int position = tab.getPosition();
+                ItemStatus status = mItemStatus.get(position);
+                TextView view = getTextView(position);
+                ImageView img = getImageView(position);
+                if (view != null) {
+                    view.setTextColor(status.getNormalTitleColor());
+                }
+                if (status.getNormalResId() != 0 && img != null) {
+                    img.setImageResource(status.getNormalResId());
+                }
+            }
+
+            @Override
+            public void onTabReselected(Tab tab) {
+            }
+        };
+    }
+
 
     public TabLayoutBuilder(Context context) {
         super(context);
@@ -46,68 +71,67 @@ public class TabLayoutBuilder extends XTabLayout {
         super(context, attrs, defStyleAttr);
     }
 
+    /**
+     * <p>Add Item where you want to show</p>
+     * <p>If you want to set the title textSize,please call {@link #setTextSize(float)}</p>
+     * <p>Else if you want to set the bottomMargin,please call {@link #setBottomMargin(int)}</p>
+     *
+     * @param status Inner class {@link ItemStatus}
+     */
+    public void addTab(ItemStatus status) {
+        View inflate = getTabView(status);
+        mItemStatus.add(status);
+        mItemViews.add(inflate);
+    }
+
+    /**
+     * <p>Set the view of bottom margin</p>
+     * <p>Must before {@link #addTab(ItemStatus)}</p>
+     *
+     * @param dp bottomMargin
+     */
     public void setBottomMargin(int dp) {
         mBottomMargin = dp;
     }
 
+    /**
+     * <p>Set the bottom title size</p>
+     * <p>Must before {@link #addTab(ItemStatus)}</p>
+     *
+     * @param sp int sp
+     */
     public void setTextSize(float sp) {
         mTextSize = sp;
     }
 
-    public void setTabIcon(int[] resId) {
-        mTabResId = resId;
-    }
-
-    public void setTabTitle(String[] tabTitle) {
-        mTabTitle = tabTitle;
-    }
-
-    public void setCenterIcon(int resId) {
-        mCenterResId = resId;
-    }
-
-    public void setCenterTitle(String title) {
-        mCenterTitle = title;
-    }
-
-    public void setTextColorId(int textColorId) {
-        mTextColorId = textColorId;
+    public void setOnCenterTabClickListener(View.OnClickListener onClickListener) {
+        mCenterTabOnClickListener = onClickListener;
     }
 
     /**
-     * 根据传入的icon、title等属性填充成View，并设置到TabLayout的每个Tab上
-     * XTabLayout#newTab()方法中会为Tab填充默认布局，这里再次填充真正布局
-     * 考虑优化Tab布局填充方式，设置自定义布局后，避免默认纯文字布局先行填充
+     * <p>Must call {@link #addTab(ItemStatus)} before</p>
+     *
+     * @throws RuntimeException
      */
     public void build() {
-        mTabCount = Math.min(mTabResId.length, mTabTitle.length) + (mHasCenterTab ? 1 : 0);
-
-        XTabLayout.Tab tab;
-        TabLayoutBuilder.ItemStatus itemStatus;
-        for (int i = 0; i < mTabCount; i++) {
-            if (mHasCenterTab && i == mTabCount / 2) {
-                itemStatus = new TabLayoutBuilder.ItemStatus(mCenterTitle, mCenterResId, mTextColorId);
-            } else if (mHasCenterTab && i > mTabCount / 2) {
-                itemStatus = new TabLayoutBuilder.ItemStatus(mTabTitle[i - 1], mTabResId[i - 1], mTextColorId);
-            } else {
-                itemStatus = new TabLayoutBuilder.ItemStatus(mTabTitle[i], mTabResId[i], mTextColorId);
-            }
-
-            mItemViewsList.add(getTabView(itemStatus));
-
-            tab = this.getTabAt(i);
+        if (mItemViews.isEmpty()) {
+            throw new RuntimeException("Must call addTab(ItemStatus status) before!");
+        }
+        for (int i = 0; i < getTabCount(); i++) {
+            XTabLayout.Tab tab = this.getTabAt(i);
             if (tab != null) {
-                tab.setCustomView(mItemViewsList.get(i));
+                tab.setCustomView(mItemViews.get(i));
+                if (i == 0) {
+                    tab.select();
+                    TextView view = getTextView(i);
+                    if (view != null) {
+                        view.setTextColor(mItemStatus.get(i).getSelectedTitleColor());
+                    }
+                }
             }
         }
-    }
-
-    private void setCenterTabCustomView(TabLayoutBuilder.ItemStatus status) {
-        Tab tab = this.getTabAt(getTabCount() / 2);
-        if (tab != null && status != null) {
-            View view = getTabView(status);
-            tab.setCustomView(view);
-        }
+        prepareForCenterTab(mCenterTabOnClickListener);
+        addOnTabSelectedListener(listener);/*inner listener*/
     }
 
     /**
@@ -117,8 +141,8 @@ public class TabLayoutBuilder extends XTabLayout {
      * @return TextView
      */
     private TextView getTextView(int position) {
-        if (mItemViewsList != null) {
-            ViewGroup parent = (ViewGroup) mItemViewsList.get(position);
+        if (mItemViews != null) {
+            ViewGroup parent = (ViewGroup) mItemViews.get(position);
             int childCount = parent.getChildCount();
             for (int i = 0; i < childCount; i++) {
                 if (parent.getChildAt(i) instanceof TextView) {
@@ -136,8 +160,8 @@ public class TabLayoutBuilder extends XTabLayout {
      * @return ImageView
      */
     private ImageView getImageView(int position) {
-        if (mItemViewsList != null) {
-            ViewGroup parent = (ViewGroup) mItemViewsList.get(position);
+        if (mItemViews != null) {
+            ViewGroup parent = (ViewGroup) mItemViews.get(position);
             int childCount = parent.getChildCount();
             for (int i = 0; i < childCount; i++) {
                 if (parent.getChildAt(i) instanceof ImageView) {
@@ -148,15 +172,15 @@ public class TabLayoutBuilder extends XTabLayout {
         return null;
     }
 
-    // 每个Tab的属性封装类ItemStatus
+
     public static final class ItemStatus {
+
         private CharSequence title;
         private int drawableSelectorId;
         private int normalResId;
         private int selectedResId;
         private int normalTitleColor;
         private int selectedTitleColor;
-        private int titleColorSelector;
 
         public ItemStatus(CharSequence title, @IdRes int normalResId, @IdRes int selectedResId, int normalTitleColor, int selectedTitleColor) {
             this.title = title;
@@ -171,12 +195,6 @@ public class TabLayoutBuilder extends XTabLayout {
             this.drawableSelectorId = drawableSelectorId;
             this.normalTitleColor = normalTitleColor;
             this.selectedTitleColor = selectedTitleColor;
-        }
-
-        public ItemStatus(CharSequence title, @IdRes int drawableSelectorId, int titleColorSelectorId) {
-            this.title = title;
-            this.drawableSelectorId = drawableSelectorId;
-            this.titleColorSelector = titleColorSelectorId;
         }
 
         private CharSequence getTitle() {
@@ -204,7 +222,13 @@ public class TabLayoutBuilder extends XTabLayout {
         }
     }
 
-    // 根据ItemStatus的属性填充成Item的View对象
+
+    /**
+     * Inflate the Item View
+     *
+     * @param status ItemStatus
+     * @return View
+     */
     private View getTabView(ItemStatus status) {
 
         LinearLayout linearLayout = new LinearLayout(getContext());
@@ -225,9 +249,7 @@ public class TabLayoutBuilder extends XTabLayout {
         text.setText(status.getTitle());
         //COMPLEX_UNIT_SP=2
         text.setTextSize(2, mTextSize);
-
-        ColorStateList csl = (ColorStateList) getResources().getColorStateList(status.titleColorSelector);
-        text.setTextColor(csl);
+        text.setTextColor(status.getNormalTitleColor());
 
         params = new LinearLayout.LayoutParams(inflate.getLayoutParams());
         params.gravity = Gravity.BOTTOM;

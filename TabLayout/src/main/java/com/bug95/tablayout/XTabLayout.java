@@ -41,12 +41,14 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.PointerIconCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v4.widget.TextViewCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.content.res.AppCompatResources;
 import android.text.Layout;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -54,11 +56,15 @@ import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -73,75 +79,6 @@ import static android.support.v4.view.ViewPager.SCROLL_STATE_DRAGGING;
 import static android.support.v4.view.ViewPager.SCROLL_STATE_IDLE;
 import static android.support.v4.view.ViewPager.SCROLL_STATE_SETTLING;
 
-/**
- * TabLayout provides a horizontal layout to display tabs.
- * <p>
- * <p>Population of the tabs to display is
- * done through {@link Tab} instances. You create tabs via {@link #newTab()}. From there you can
- * change the tab's label or icon via {@link Tab#setText(int)} and {@link Tab#setIcon(int)}
- * respectively. To display the tab, you need to add it to the layout via one of the
- * {@link #addTab(Tab)} methods. For example:
- * <pre>
- * TabLayout tabLayout = ...;
- * tabLayout.addTab(tabLayout.newTab().setText("Tab 1"));
- * tabLayout.addTab(tabLayout.newTab().setText("Tab 2"));
- * tabLayout.addTab(tabLayout.newTab().setText("Tab 3"));
- * </pre>
- * You should set a listener via {@link #setOnTabSelectedListener(OnTabSelectedListener)} to be
- * notified when any tab's selection state has been changed.
- * <p>
- * <p>You can also add items to TabLayout in your layout through the use of {@link XTabItem}.
- * An example usage is like so:</p>
- * <p>
- * <pre>
- * &lt;android.support.design.widget.TabLayout
- *         android:layout_height=&quot;wrap_content&quot;
- *         android:layout_width=&quot;match_parent&quot;&gt;
- *
- *     &lt;android.support.design.widget.TabItem
- *             android:text=&quot;@string/tab_text&quot;/&gt;
- *
- *     &lt;android.support.design.widget.TabItem
- *             android:icon=&quot;@drawable/ic_android&quot;/&gt;
- *
- * &lt;/android.support.design.widget.TabLayout&gt;
- * </pre>
- * <p>
- * <h3>ViewPager integration</h3>
- * <p>
- * If you're using a {@link ViewPager} together
- * with this layout, you can call {@link #setupWithViewPager(ViewPager)} to link the two together.
- * This layout will be automatically populated from the {@link PagerAdapter}'s page titles.</p>
- * <p>
- * <p>
- * This view also supports being used as part of a ViewPager's decor, and can be added
- * directly to the ViewPager in a layout resource file like so:</p>
- * <p>
- * <pre>
- * &lt;android.support.v4.view.ViewPager
- *     android:layout_width=&quot;match_parent&quot;
- *     android:layout_height=&quot;match_parent&quot;&gt;
- *
- *     &lt;android.support.design.widget.TabLayout
- *         android:layout_width=&quot;match_parent&quot;
- *         android:layout_height=&quot;wrap_content&quot;
- *         android:layout_gravity=&quot;top&quot; /&gt;
- *
- * &lt;/android.support.v4.view.ViewPager&gt;
- * </pre>
- *
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPadding
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPaddingStart
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPaddingTop
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPaddingEnd
- * @attr ref android.support.design.R.styleable#XTabLayout_tabPaddingBottom
- * @attr ref android.support.design.R.styleable#XTabLayout_tabContentStart
- * @attr ref android.support.design.R.styleable#XTabLayout_tabBackground
- * @attr ref android.support.design.R.styleable#XTabLayout_tabMinWidth
- * @attr ref android.support.design.R.styleable#XTabLayout_tabMaxWidth
- * @attr ref android.support.design.R.styleable#XTabLayout_tabTextAppearance
- * @see <a href="http://www.google.com/design/spec/components/tabs.html">Tabs</a>
- */
 @ViewPager.DecorView
 public class XTabLayout extends HorizontalScrollView {
 
@@ -245,15 +182,12 @@ public class XTabLayout extends HorizontalScrollView {
         public void onTabReselected(Tab tab);
     }
 
+    private Context mContext;
     private final ArrayList<Tab> mTabs = new ArrayList<>();
     private Tab mSelectedTab;
 
     private final SlidingTabStrip mTabStrip;
-
-    boolean mHasCenterTab;
-    private int mCenterTabWidth;
-    private int mCenterTabHeight;
-    private int mCenterTabMarginBottom;
+    private final ContentRoot mContentRoot;
 
     int mTabPaddingStart;
     int mTabPaddingTop;
@@ -276,11 +210,11 @@ public class XTabLayout extends HorizontalScrollView {
 
     int mTabGravity;
     int mMode;
+    int mCenterTabWidth;
 
     private OnTabSelectedListener mSelectedListener;
     private final ArrayList<OnTabSelectedListener> mSelectedListeners = new ArrayList<>();
     private OnTabSelectedListener mCurrentVpSelectedListener;
-    private OnCenterTabSelectedListener mCenterTabSelectedListener;
 
     private ValueAnimatorCompat mScrollAnimator;
 
@@ -290,6 +224,7 @@ public class XTabLayout extends HorizontalScrollView {
     private TabLayoutOnPageChangeListener mPageChangeListener;
     private AdapterChangeListener mAdapterChangeListener;
     private boolean mSetupViewPagerImplicitly;
+    private boolean mHasCenterButton;
 
     // Pool we use as a simple RecyclerBin
     private final Pools.Pool<TabView> mTabViewPool = new Pools.SimplePool<>(12);
@@ -304,6 +239,7 @@ public class XTabLayout extends HorizontalScrollView {
 
     public XTabLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        mContext = context;
         setClipChildren(false);
 
         ThemeUtils.checkAppCompatTheme(context);
@@ -311,10 +247,14 @@ public class XTabLayout extends HorizontalScrollView {
         // Disable the Scroll Bar
         setHorizontalScrollBarEnabled(false);
 
+        mContentRoot = new ContentRoot(context);
+        super.addView(mContentRoot, 0, new LayoutParams(
+                LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
+
         // Add the TabStrip
         mTabStrip = new SlidingTabStrip(context);
-        super.addView(mTabStrip, 0, new LayoutParams(
-                LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
+        mContentRoot.addView(mTabStrip, 0, new LayoutParams(
+                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.XTabLayout,
                 defStyleAttr, R.style.Widget_Design_xTabLayout);
@@ -322,13 +262,6 @@ public class XTabLayout extends HorizontalScrollView {
         mTabStrip.setSelectedIndicatorHeight(
                 a.getDimensionPixelSize(R.styleable.XTabLayout_tabIndicatorHeight, 0));
         mTabStrip.setSelectedIndicatorColor(a.getColor(R.styleable.XTabLayout_tabIndicatorColor, 0));
-
-        mHasCenterTab = a.getBoolean(R.styleable.XTabLayout_hasCenterTab, false);
-        if (mHasCenterTab) {
-            mCenterTabWidth = a.getDimensionPixelSize(R.styleable.XTabLayout_centerTabWidth, 0);
-            mCenterTabHeight = a.getDimensionPixelSize(R.styleable.XTabLayout_centerTabHeight, 0);
-            mCenterTabMarginBottom = a.getDimensionPixelSize(R.styleable.XTabLayout_centerTabMarginBottom, 0);
-        }
 
         mTabPaddingStart = mTabPaddingTop = mTabPaddingEnd = mTabPaddingBottom = a
                 .getDimensionPixelSize(R.styleable.XTabLayout_tabPadding, 0);
@@ -375,8 +308,9 @@ public class XTabLayout extends HorizontalScrollView {
                 INVALID_WIDTH);
         mTabBackgroundResId = a.getResourceId(R.styleable.XTabLayout_tabBackground, 0);
         mContentInsetStart = a.getDimensionPixelSize(R.styleable.XTabLayout_tabContentStart, 0);
-        mMode = a.getInt(R.styleable.XTabLayout_xTabMode, MODE_FIXED);
-        mTabGravity = a.getInt(R.styleable.XTabLayout_xTabGravity, GRAVITY_FILL);
+        mMode = a.getInt(R.styleable.XTabLayout_xtabMode, MODE_FIXED);
+        mTabGravity = a.getInt(R.styleable.XTabLayout_xtabGravity, GRAVITY_FILL);
+        mCenterTabWidth = a.getDimensionPixelSize(R.styleable.XTabLayout_centerButtonWidth, INVALID_WIDTH);
         a.recycle();
 
         // TODO add attr for these
@@ -570,11 +504,6 @@ public class XTabLayout extends HorizontalScrollView {
         mSelectedListeners.clear();
     }
 
-    public void setOnCenterTabSelectedListener(OnCenterTabSelectedListener listener) {
-        mCenterTabSelectedListener = listener;
-        ((ViewPagerOnTabSelectedListener) mCurrentVpSelectedListener).setCenterTabSelectedListener(listener);
-    }
-
     /**
      * Create and return a new {@link Tab}. You need to manually add this using
      * {@link #addTab(Tab)} or a related method.
@@ -762,17 +691,58 @@ public class XTabLayout extends HorizontalScrollView {
         setTabTextColors(createColorStateList(normalColor, selectedColor));
     }
 
-    /**
-     * TabLayout使用方式一：配合ViewPager使用，利用ViewPager中的数据（一般只有TextTitle或null）填充Tab
-     * 即在populateFromPagerAdapter方法通过addTab(newTab())添加Tab
-     * <p>
-     * The one-stop shop for setting up this {@link XTabLayout} with a {@link ViewPager}.
-     * <p>
-     * <p>This is the same as calling {@link #setupWithViewPager(ViewPager, boolean)} with
-     * auto-refresh enabled.</p>
-     *
-     * @param viewPager the ViewPager to link to, or {@code null} to clear any previous link
-     */
+    public void prepareForCenterTab(OnClickListener listener) {
+        if (mCenterTabWidth == 0) {
+            return;
+        }
+
+        ImageView imageView = (ImageView) View.inflate(mContext, R.layout.design_layout_tab_icon, null);
+        prepareForCenterTab(imageView, listener);
+    }
+
+    public void prepareForCenterTab(final View centerView, final OnClickListener listener) {
+        if (mCenterTabWidth == 0) {
+            return;
+        }
+
+        ViewTreeObserver vto = mTabStrip.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                mTabStrip.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                int mTabStripWidth = mTabStrip.getWidth(); // The width of view, in pixels.
+                int tabsCount = mTabs.size();
+
+                if (mCenterTabWidth == -1) {
+                    mCenterTabWidth = mTabStripWidth / (tabsCount + 1);
+                }
+                doAddCenterTab(centerView, listener);
+            }
+        });
+    }
+
+    private void doAddCenterTab(View centerView, OnClickListener listener) {
+        mHasCenterButton = true;
+        // All tabs have been added into SlidingTabStrip object
+        int tabsCount = mTabs.size();
+        int centerTabIndex1 = (tabsCount / 2) - 1;
+        int centerTabIndex2 = tabsCount / 2;
+        ViewUtils.setMargins(mTabs.get(centerTabIndex1).getView(), 0, 0, mCenterTabWidth / 2, 0);
+        ViewUtils.setMargins(mTabs.get(centerTabIndex2).getView(), mCenterTabWidth / 2, 0, 0, 0);
+
+        LinearLayout centerTab = new LinearLayout(mContext);
+        FrameLayout.LayoutParams frameLayoutParams = new FrameLayout.LayoutParams(mCenterTabWidth, LayoutParams.MATCH_PARENT);
+        frameLayoutParams.gravity = Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM;
+        centerTab.setLayoutParams(frameLayoutParams);
+        centerTab.setOnClickListener(listener);
+        mContentRoot.addView(centerTab, 0, centerTab.getLayoutParams());
+
+        LinearLayout.LayoutParams linearLayoutParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        centerView.setLayoutParams(linearLayoutParams);
+        centerTab.addView(centerView, 0, centerView.getLayoutParams());
+    }
+
     public void setupWithViewPager(@Nullable ViewPager viewPager) {
         setupWithViewPager(viewPager, true);
     }
@@ -858,87 +828,6 @@ public class XTabLayout extends HorizontalScrollView {
     }
 
     /**
-     * 和原生setupWithViewPager方法类似，将XTabLayout和ViewPager关联起来
-     * 与原生相比，该方法中的ViewPager必须使用XPagerAdapter作为适配器
-     * XPagerAdapter负责为XTabLayout提供Tab的布局或布局资源（原生ViewPager只能向TabLayout提供标题）
-     * 以及可选的中央按钮资源
-     */
-    public void setupWithXViewPager(@Nullable ViewPager viewPager) {
-        setupWithXViewPager(viewPager, true);
-    }
-
-    public void setupWithXViewPager(@Nullable final ViewPager viewPager, boolean autoRefresh) {
-        setupWithXViewPager(viewPager, autoRefresh, false);
-    }
-
-    private void setupWithXViewPager(@Nullable final ViewPager viewPager, boolean autoRefresh,
-                                     boolean implicitSetup) {
-        removeOriginalListener();
-
-        if (viewPager != null) {
-            mViewPager = viewPager;
-
-            final XPagerAdapter adapter = (XPagerAdapter) viewPager.getAdapter();
-            if (adapter != null) {
-                setPagerAdapter(adapter, autoRefresh);
-            }
-
-            addBaseListener(viewPager, autoRefresh);
-            setScrollPosition(viewPager.getCurrentItem(), 0f, true);
-        } else {
-            mViewPager = null;
-            setPagerAdapter(null, false);
-        }
-
-        mSetupViewPagerImplicitly = implicitSetup;
-    }
-
-    private void removeOriginalListener() {
-        if (mViewPager != null) {
-            // If we've already been setup with a ViewPager, remove us from it
-            if (mPageChangeListener != null) {
-                mViewPager.removeOnPageChangeListener(mPageChangeListener);
-            }
-            if (mAdapterChangeListener != null) {
-                mViewPager.removeOnAdapterChangeListener(mAdapterChangeListener);
-            }
-        }
-
-        if (mCurrentVpSelectedListener != null) {
-            // If we already have a tab selected listener for the ViewPager, remove it
-            removeOnTabSelectedListener(mCurrentVpSelectedListener);
-            mCurrentVpSelectedListener = null;
-        }
-
-        if (mCenterTabSelectedListener != null) {
-            mCenterTabSelectedListener = null;
-        }
-    }
-
-    private void addBaseListener(ViewPager viewPager, boolean autoRefresh) {
-        // Add our custom OnPageChangeListener to the ViewPager
-        if (mPageChangeListener == null) {
-            mPageChangeListener = new TabLayoutOnPageChangeListener(this, mViewPager, mPagerAdapter.getCount(), mHasCenterTab);
-        }
-        mPageChangeListener.reset();
-        viewPager.addOnPageChangeListener(mPageChangeListener);
-
-        // Now we'll add a tab selected listener to set ViewPager's current item
-        // 中央按钮被点击也会被ViewPagerOnTabSelectedListener监听到，但是需要做特殊处理
-        // 所以需要传入中央按钮点击监听器
-        mCurrentVpSelectedListener = new ViewPagerOnTabSelectedListener(viewPager, mTabStrip.getChildCount(), mHasCenterTab, mCenterTabSelectedListener);
-
-        addOnTabSelectedListener(mCurrentVpSelectedListener);
-
-        // Add a listener so that we're notified of any adapter changes
-        if (mAdapterChangeListener == null) {
-            mAdapterChangeListener = new AdapterChangeListener();
-        }
-        mAdapterChangeListener.setAutoRefresh(autoRefresh);
-        viewPager.addOnAdapterChangeListener(mAdapterChangeListener);
-    }
-
-    /**
      * @deprecated Use {@link #setupWithViewPager(ViewPager)} to link a TabLayout with a ViewPager
      * together. When that method is used, the TabLayout will be automatically updated
      * when the {@link PagerAdapter} is changed.
@@ -1008,46 +897,20 @@ public class XTabLayout extends HorizontalScrollView {
 
     void populateFromPagerAdapter() {
         removeAllTabs();
-        if (mPagerAdapter == null) {
-            return;
-        }
 
-        if (mHasCenterTab) {
-            if (!(mPagerAdapter instanceof XPagerAdapter)) {
-                throw new RuntimeException("Center tab must cooperate with XPagerAdapter");
+        if (mPagerAdapter != null) {
+            final int adapterCount = mPagerAdapter.getCount();
+            for (int i = 0; i < adapterCount; i++) {
+                addTab(newTab().setText(mPagerAdapter.getPageTitle(i)), false);
             }
-            addTabsWithCenterTab();
-        } else {
-            addCommonTabs();
-        }
 
-        // Make sure we reflect the currently set ViewPager item
-        if (mViewPager != null && mPagerAdapter.getCount() > 0) {
-            final int curItem = mViewPager.getCurrentItem();
-            if (curItem != getSelectedTabPosition() && curItem < getTabCount()) {
-                selectTab(getTabAt(curItem));
+            // Make sure we reflect the currently set ViewPager item
+            if (mViewPager != null && adapterCount > 0) {
+                final int curItem = mViewPager.getCurrentItem();
+                if (curItem != getSelectedTabPosition() && curItem < getTabCount()) {
+                    selectTab(getTabAt(curItem));
+                }
             }
-        }
-    }
-
-    // Android源码中添加Tab的方法，无中央按钮和图文布局
-    private void addCommonTabs() {
-        int adapterCount = mPagerAdapter.getCount();
-        for (int i = 0; i < adapterCount; i++) {
-            addTab(newTab().setText(mPagerAdapter.getPageTitle(i)), false);
-        }
-    }
-
-    private void addTabsWithCenterTab() {
-//        View view = LayoutInflater.from(getContext()).inflate(R.layout.design_layout_tab_icon, this, false);
-
-        final int pagerCount = mPagerAdapter.getCount();
-        for (int i = 0; i < pagerCount / 2; i++) {
-            addTab(newTab().setText(mPagerAdapter.getPageTitle(i)), false);
-        }
-        addTab(newTab().setText("CenterTab"), false);
-        for (int i = pagerCount / 2; i < pagerCount; i++) {
-            addTab(newTab().setText(mPagerAdapter.getPageTitle(i)), false);
         }
     }
 
@@ -1167,10 +1030,10 @@ public class XTabLayout extends HorizontalScrollView {
         // Now super measure itself using the (possibly) modified height spec
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        if (getChildCount() == 1) {
+        if (getChildCount() == 1 || mHasCenterButton) {
             // If we're in fixed mode then we need to make the tab strip is the same width as us
             // so we don't scroll
-            final View child = getChildAt(0);
+            final View child = getChildAt(getChildCount() - 1);
             boolean remeasure = false;
 
             switch (mMode) {
@@ -1401,6 +1264,9 @@ public class XTabLayout extends HorizontalScrollView {
             return this;
         }
 
+        public View getView() {
+            return mView;
+        }
 
         /**
          * Returns the custom view used for this tab.
@@ -2190,6 +2056,59 @@ public class XTabLayout extends HorizontalScrollView {
         }
     }
 
+    private class ContentRoot extends FrameLayout {
+
+        public ContentRoot(Context context) {
+            super(context);
+            setClipChildren(false);
+        }
+
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            final int idealHeight = dpToPx(getDefaultHeight()) + getPaddingTop() + getPaddingBottom();
+            switch (MeasureSpec.getMode(heightMeasureSpec)) {
+                case MeasureSpec.AT_MOST:
+                    heightMeasureSpec = MeasureSpec.makeMeasureSpec(
+                            Math.min(idealHeight, MeasureSpec.getSize(heightMeasureSpec)),
+                            MeasureSpec.EXACTLY);
+                    break;
+                case MeasureSpec.UNSPECIFIED:
+                    heightMeasureSpec = MeasureSpec.makeMeasureSpec(idealHeight, MeasureSpec.EXACTLY);
+                    break;
+            }
+
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+            if (getChildCount() == 1) {
+                // If we're in fixed mode then we need to make the tab strip is the same width as us
+                // so we don't scroll
+                final View child = getChildAt(0);
+                boolean remeasure = false;
+
+                switch (mMode) {
+                    case MODE_SCROLLABLE:
+                        // We only need to resize the child if it's smaller than us. This is similar
+                        // to fillViewport
+                        remeasure = child.getMeasuredWidth() < getMeasuredWidth();
+                        break;
+                    case MODE_FIXED:
+                        // Resize the child so that it doesn't scroll
+                        remeasure = child.getMeasuredWidth() != getMeasuredWidth();
+                        break;
+                }
+
+                if (remeasure) {
+                    // Re-measure the child with a widthSpec set to be exactly our measure width
+                    int childHeightMeasureSpec = getChildMeasureSpec(heightMeasureSpec, getPaddingTop()
+                            + getPaddingBottom(), child.getLayoutParams().height);
+                    int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
+                            getMeasuredWidth(), MeasureSpec.EXACTLY);
+                    child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+                }
+            }
+        }
+
+    }
+
     private static ColorStateList createColorStateList(int defaultColor, int selectedColor) {
         final int[][] states = new int[2][];
         final int[] colors = new int[2];
@@ -2253,21 +2172,11 @@ public class XTabLayout extends HorizontalScrollView {
      */
     public static class TabLayoutOnPageChangeListener implements ViewPager.OnPageChangeListener {
         private final WeakReference<XTabLayout> mTabLayoutRef;
-        private ViewPager mViewPager;
         private int mPreviousScrollState;
         private int mScrollState;
-        private float mHalfPagerPosition = -1;
-        private boolean mHasCenterTab;
 
         public TabLayoutOnPageChangeListener(XTabLayout tabLayout) {
             mTabLayoutRef = new WeakReference<>(tabLayout);
-        }
-
-        public TabLayoutOnPageChangeListener(XTabLayout tabLayout, ViewPager viewPager, int pagerCount, boolean hasCenterTab) {
-            mTabLayoutRef = new WeakReference<>(tabLayout);
-            mViewPager = viewPager;
-            mHalfPagerPosition = (pagerCount - 1) / 2.0f;
-            mHasCenterTab = hasCenterTab;
         }
 
         @Override
@@ -2278,15 +2187,8 @@ public class XTabLayout extends HorizontalScrollView {
 
         // 滑动时不断回调，产生滑动不一定切换页面，但是需要刷新指示器
         @Override
-        public void onPageScrolled(int position, final float positionOffset,
+        public void onPageScrolled(final int position, final float positionOffset,
                                    final int positionOffsetPixels) {
-            // 为-1时认为未初始化，即无中央按钮的情况，不需处理
-            // position为基准位置，positionOffset为滑动中偏移的位置，两者和即为实际位置
-            // 一旦实际位置越过中间分割线，就需要为position+1，以跳过中心按钮
-            if (mHasCenterTab && mHalfPagerPosition != -1 && (position + positionOffset) >= mHalfPagerPosition) {
-                position++;
-            }
-
             final XTabLayout tabLayout = mTabLayoutRef.get();
             if (tabLayout != null) {
                 // Only update the text selection if we're not settling, or we are settling after
@@ -2304,11 +2206,7 @@ public class XTabLayout extends HorizontalScrollView {
 
         // 页面切换时回调，用来更新选中Tab位置
         @Override
-        public void onPageSelected(int position) {
-            if (mHasCenterTab && position >= mHalfPagerPosition) {
-                position++;
-            }
-
+        public void onPageSelected(final int position) {
             final XTabLayout tabLayout = mTabLayoutRef.get();
             if (tabLayout != null && tabLayout.getSelectedTabPosition() != position
                     && position < tabLayout.getTabCount()) {
@@ -2332,75 +2230,24 @@ public class XTabLayout extends HorizontalScrollView {
      */
     public static class ViewPagerOnTabSelectedListener implements XTabLayout.OnTabSelectedListener {
         private final ViewPager mViewPager;
-        private int mHalfTabPosition = -1;
-        private boolean mHasCenterTab;
-        private OnCenterTabSelectedListener mCenterTabSelectedListener;
 
         public ViewPagerOnTabSelectedListener(ViewPager viewPager) {
             mViewPager = viewPager;
         }
 
-        public ViewPagerOnTabSelectedListener(ViewPager viewPager, int tabCount, boolean hasCenterTab, OnCenterTabSelectedListener listener) {
-            mViewPager = viewPager;
-            mHalfTabPosition = tabCount / 2;
-            mHasCenterTab = hasCenterTab;
-            mCenterTabSelectedListener = listener;
-        }
-
-        public void setCenterTabSelectedListener(OnCenterTabSelectedListener centerTabSelectedListener) {
-            this.mCenterTabSelectedListener = centerTabSelectedListener;
-        }
-
         @Override
         public void onTabSelected(XTabLayout.Tab tab) {
-            int position = tab.getPosition();
-
-            // 无中央按钮，不需要位置转换
-            if (!mHasCenterTab || mHalfTabPosition == -1) {
-                mViewPager.setCurrentItem(position);
-                return;
-            }
-
-            if (position == mHalfTabPosition) {
-                // 需要加入中央按钮点击处理逻辑
-                if (mCenterTabSelectedListener != null) {
-                    mCenterTabSelectedListener.onCenterTabSelected(tab);
-                }
-                return;
-            }
-
-            if (position > mHalfTabPosition) {
-                position--;
-            }
-            mViewPager.setCurrentItem(position);
+            mViewPager.setCurrentItem(tab.getPosition());
         }
 
         @Override
         public void onTabUnselected(XTabLayout.Tab tab) {
-            if (tab.getPosition() == mHalfTabPosition) {
-                if (mCenterTabSelectedListener != null) {
-                    mCenterTabSelectedListener.onCenterTabUnselected(tab);
-                }
-            }
+            // No-op
         }
 
         @Override
         public void onTabReselected(XTabLayout.Tab tab) {
-            View view = tab.getCustomView();
-            if (tab.getPosition() == mHalfTabPosition && view != null) {
-                // 中央按钮再次点击时，取消选中状态
-                if (view.isSelected()) {
-                    view.setSelected(false);
-                    if (mCenterTabSelectedListener != null) {
-                        mCenterTabSelectedListener.onCenterTabUnselected(tab);
-                    }
-                } else {
-                    view.setSelected(true);
-                    if (mCenterTabSelectedListener != null) {
-                        mCenterTabSelectedListener.onCenterTabSelected(tab);
-                    }
-                }
-            }
+            // No-op
         }
     }
 
