@@ -26,6 +26,7 @@
         <attr name="tabPaddingBottom" format="dimension"/>
         <attr name="tabPadding" format="dimension"/>
         <attr name="centerButtonWidth" format="dimension" />
+        <attr name="hasCenterTab" format="boolean" />
     </declare-styleable>
 
 </resources>

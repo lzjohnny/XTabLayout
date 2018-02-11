@@ -211,6 +211,7 @@ public class XTabLayout extends HorizontalScrollView {
     int mTabGravity;
     int mMode;
     int mCenterTabWidth;
+    boolean mHasCenterTab;
 
     private OnTabSelectedListener mSelectedListener;
     private final ArrayList<OnTabSelectedListener> mSelectedListeners = new ArrayList<>();
@@ -311,6 +312,7 @@ public class XTabLayout extends HorizontalScrollView {
         mMode = a.getInt(R.styleable.XTabLayout_xtabMode, MODE_FIXED);
         mTabGravity = a.getInt(R.styleable.XTabLayout_xtabGravity, GRAVITY_FILL);
         mCenterTabWidth = a.getDimensionPixelSize(R.styleable.XTabLayout_centerButtonWidth, INVALID_WIDTH);
+        mHasCenterTab = a.getBoolean(R.styleable.XTabLayout_hasCenterTab, false);
         a.recycle();
 
         // TODO add attr for these
